@@ -1,0 +1,1 @@
+ -LD:/Install/Anaconda3/libs -lpython37 D:/Install/Anaconda3/python37.dll -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32 

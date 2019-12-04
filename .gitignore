@@ -1,0 +1,19 @@
+# code dir
+code/*/build
+code/*/work_dirs
+code/*/__pycache__
+code/*/ignores
+
+# data dir
+data/*/chunk
+data/*/features
+data/*/raw_data
+
+# Pytorch
+*.h5
+*.pth
+*.pkl
+*.pkl.json
+*.log.json
+
+# custom
