@@ -14,14 +14,14 @@ raw_train_file = dict(
         dict(name='pos', type='int'),
         dict(name='deviceid'),
         dict(name='app_version'),
-        dict(name='newsid', type='str'),
+        dict(name='newsid', type='int'),
         dict(name='device_vendor', type='str', transform='lower'),
         dict(name='netmodel', type='str', transform='lower'),
         dict(name='osversion', type='str', transform='lower'),
         dict(name='device_version', type='str', transform='lower'),
-        dict(name='lng', type='float', operators='group', group_dists=(10,)),
-        dict(name='lat', type='float', operators='group', group_dists=(10,)),
-        dict(name='ts', type='float', unit=1 / 1000, command='timestamp', operators=('hour', 'week'))
+        dict(name='lng', type='float', command='group', group_dists=(10,)),
+        dict(name='lat', type='float', command='group', group_dists=(10,)),
+        dict(name='ts', type='int', unit=1 / 1000, command='timestamp', operators=('hour', 'week'))
     ]
 )
 raw_test_file = dict(
@@ -31,7 +31,7 @@ raw_test_file = dict(
         dict(name='pos', type='int'),
         dict(name='deviceid'),
         dict(name='app_version'),
-        dict(name='newsid', type='str'),
+        dict(name='newsid', type='int'),
         dict(name='device_vendor', type='str', transform='lower'),
         dict(name='netmodel', type='str', transform='lower'),
         dict(name='osversion', type='str', transform='lower'),
@@ -59,7 +59,7 @@ other_train_files = [
             dict(name='tag', command='split', operators=('len','sum','mean','min','max',), group_dists=(2, 10, 2), splits=('|',':'),),
             dict(name='personidentification'),
             dict(name='gender'),
-            dict(name='level', type='int', command='group', group_dists=(5,)),
+            dict(name='level', type='float', command='group', group_dists=(5,)),
             dict(name='followscore', type='float', command='group', group_dists=(2,)),
             dict(name='personalscore', type='float', command='group', group_dists=(2,)),
         ]

@@ -55,14 +55,14 @@ constexpr auto INT64_NAN = 0x7FFFFFFFFFFFFFFF;
 #ifndef REGION
 
 typedef struct FeatureAttribute {
-	string name = "";
-	string type = "";
-	string transform = "";
+	wstring name = L"";
+	wstring type = L"";
+	wstring transform = L"";
 	double unit = 1.0;
-	string command = "";
-	vector<string> operators;
+	wstring command = L"";
+	vector<wstring> operators;
 	vector<double> group_dists;
-	vector<string> splits;
+	vector<wstring> splits;
 	int start_index = 0;
 	int end_index = 0;
 }FeatureAttribute;
@@ -83,22 +83,22 @@ struct tm tm_pt_2_tm_struct(struct tm* tp) {
 }
 
 
-vector<string> str_split(string str, string split) {
-	vector<string> v;
+vector<wstring> str_split(wstring str, wstring split) {
+	vector<wstring> v;
 	int idx = 0;
-	while (idx != string::npos)
+	while (idx != wstring::npos)
 	{
 		int pos = str.find(split, idx);
-		if (pos == string::npos)
+		if (pos == wstring::npos)
 		{
 			break;
 		}
-		string _ = str.substr(idx, pos - idx);
+		wstring _ = str.substr(idx, pos - idx);
 		v.push_back(_);
 		idx = pos + 1;
 	}
-	string _ = str.substr(idx, str.length() - idx);
-	if (_ != "")
+	wstring _ = str.substr(idx, str.length() - idx);
+	if (_ != L"")
 	{
 		v.push_back(_);
 	}
@@ -106,10 +106,10 @@ vector<string> str_split(string str, string split) {
 }
 
 
-double string2double(string str)
+double wstring2double(wstring str)
 {
 	double num;
-	stringstream ss;
+	wstringstream ss;
 	ss << str;
 	ss >> num;
 	return num;
@@ -140,8 +140,8 @@ void vec_statistics(vector<double>v, double& sum, double& mean, double& max, dou
 }
 
 
-bool is_nan(string str) {
-	return "" == str;
+bool is_nan(wstring str) {
+	return L"" == str;
 }
 
 
@@ -233,38 +233,38 @@ int template_index(vector<T> vecs, T s) {
 }
 
 
-int get_tm_type(struct tm t, string type) {
-	if ("sec" == type) {
+int get_tm_type(struct tm t, wstring type) {
+	if (L"sec" == type) {
 		return t.tm_sec;
 	}
-	else if ("min" == type) {
+	else if (L"min" == type) {
 		return t.tm_min;
 	}
-	else if ("hour" == type)
+	else if (L"hour" == type)
 	{
 		return t.tm_hour;
 	}
-	else if ("mday" == type)
+	else if (L"mday" == type)
 	{
 		return t.tm_mday;
 	}
-	else if ("mon" == type)
+	else if (L"mon" == type)
 	{
 		return t.tm_mon;
 	}
-	else if ("year" == type)
+	else if (L"year" == type)
 	{
 		return t.tm_year + 1900;
 	}
-	else if ("wday" == type)
+	else if (L"wday" == type)
 	{
 		return t.tm_wday;
 	}
-	else if ("yday" == type)
+	else if (L"yday" == type)
 	{
 		return t.tm_yday;
 	}
-	else if ("isdst" == type)
+	else if (L"isdst" == type)
 	{
 		return t.tm_isdst;
 	}
@@ -276,11 +276,11 @@ int get_tm_type(struct tm t, string type) {
 
 template<typename T>
 void _operator_col(
-	vector < vector<int64_t>>& outFeatures, vector < vector<bool>>& outFeaIndexs, vector<FeatureAttribute>& outFeaAttribs,
-	vector<T>& col, vector<bool>& index, FeatureAttribute feaAttrib)
+	vector < vector<int64_t>>& outFeatures, vector < vector<int64_t>>& outFeaIndexs, vector<FeatureAttribute>& outFeaAttribs,
+	vector<T>& col, vector<int64_t>& index, FeatureAttribute feaAttrib)
 {
 	outFeatures.resize(0); outFeaIndexs.resize(0); outFeaAttribs.resize(0);
-	if ("timestamp" == feaAttrib.command)
+	if (L"timestamp" == feaAttrib.command)
 	{
 		vector<struct tm> ttimes(col.size());
 		for (size_t i = 0; i < col.size(); i++)
@@ -297,11 +297,11 @@ void _operator_col(
 				ttimes[i] = tm_pt_2_tm_struct(ttime);
 			}
 		}
-		for (vector<string>::iterator op = feaAttrib.operators.begin(); op != feaAttrib.operators.end(); op++)
+		for (vector<wstring>::iterator op = feaAttrib.operators.begin(); op != feaAttrib.operators.end(); op++)
 		{
 			FeatureAttribute outFeaAttrib;
-			outFeaAttrib.name = feaAttrib.name + "_" + *op;
-			outFeaAttrib.command = "timestamp";
+			outFeaAttrib.name = feaAttrib.name + L"_" + *op;
+			outFeaAttrib.command = L"timestamp";
 			vector<int64_t> outFeature(ttimes.size());
 			for (size_t i = 0; i < ttimes.size(); i++)
 			{
@@ -315,7 +315,7 @@ void _operator_col(
 			outFeaIndexs.push_back(index);
 		}
 	}
-	else if ("group" == feaAttrib.command)
+	else if (L"group" == feaAttrib.command)
 	{
 		vector<int64_t> outFeature(col.size());
 		for (size_t i = 0; i < col.size(); i++)
@@ -344,16 +344,16 @@ void _operator_col(
 
 
 void _operator_col(
-	vector < vector<double>>& outFeatures, vector < vector<bool>>& outFeaIndexs, vector<FeatureAttribute>& outFeaAttribs,
-	vector<string>& col, vector<bool>& index, FeatureAttribute feaAttrib)
+	vector < vector<double>>& outFeatures, vector < vector<int64_t>>& outFeaIndexs, vector<FeatureAttribute>& outFeaAttribs,
+	vector<wstring>& col, vector<int64_t>& index, FeatureAttribute feaAttrib)
 {
 	outFeatures.resize(0); outFeaIndexs.resize(0); outFeaAttribs.resize(0);
-	if ("split" == feaAttrib.command)
+	if (L"split" == feaAttrib.command)
 	{
-		vector<vector<string>> split_groups(col.size());
+		vector<vector<wstring>> split_groups(col.size());
 		for (size_t i = 0; i < col.size(); i++)
 		{
-			vector<string> split_group;
+			vector<wstring> split_group;
 			if (is_nan(col[i]))
 			{
 				index[i] = true;
@@ -382,17 +382,17 @@ void _operator_col(
 				{
 					for (size_t k = 1; k < feaAttrib.splits.size(); k++)
 					{
-						vector<string> s = str_split(split_group[j], feaAttrib.splits[k]);
+						vector<wstring> s = str_split(split_group[j], feaAttrib.splits[k]);
 						if (s.size() >= 2)
 						{
 							split_group[j] = s[1];
-							if ("" == split_group[j])
+							if (L"" == split_group[j])
 							{
-								split_group[j] = "0";
+								split_group[j] = L"0";
 							}
 						}
 						else {
-							split_group[j] = "0";
+							split_group[j] = L"0";
 						}
 
 					}
@@ -412,7 +412,7 @@ void _operator_col(
 				{
 					for (size_t j = 0; j < split_groups[i].size(); j++)
 					{
-						double f = string2double(split_groups[i][j]);
+						double f = wstring2double(split_groups[i][j]);
 						split_value.push_back(f);
 					}
 					split_values[i] = split_value;
@@ -443,11 +443,11 @@ void _operator_col(
 
 		for (size_t i = 0; i < feaAttrib.operators.size(); i++)
 		{
-			if ("len" == feaAttrib.operators[i])
+			if (L"len" == feaAttrib.operators[i])
 			{
 				FeatureAttribute outFeaAttrib;
-				outFeaAttrib.name = feaAttrib.name + "_len";
-				outFeaAttrib.command = "split";
+				outFeaAttrib.name = feaAttrib.name + L"_len";
+				outFeaAttrib.command = L"split";
 				vector<double> outFeature(col.size());
 				for (size_t j = 0; j < outFeature.size(); j++)
 				{
@@ -465,11 +465,11 @@ void _operator_col(
 				outFeatures.push_back(outFeature);
 				outFeaIndexs.push_back(index);
 			}
-			else if ("sum" == feaAttrib.operators[i])
+			else if (L"sum" == feaAttrib.operators[i])
 			{
 				FeatureAttribute outFeaAttrib;
-				outFeaAttrib.name = feaAttrib.name + "_sum";
-				outFeaAttrib.command = "split";
+				outFeaAttrib.name = feaAttrib.name + L"_sum";
+				outFeaAttrib.command = L"split";
 				for (size_t j = 0; j < split_sums.size(); j++)
 				{
 					if (false == index[j])
@@ -485,11 +485,11 @@ void _operator_col(
 				outFeatures.push_back(split_sums);
 				outFeaIndexs.push_back(index);
 			}
-			else if ("mean" == feaAttrib.operators[i])
+			else if (L"mean" == feaAttrib.operators[i])
 			{
 				FeatureAttribute outFeaAttrib;
-				outFeaAttrib.name = feaAttrib.name + "_mean";
-				outFeaAttrib.command = "split";
+				outFeaAttrib.name = feaAttrib.name + L"_mean";
+				outFeaAttrib.command = L"split";
 				for (size_t j = 0; j < split_means.size(); j++)
 				{
 					if (false == index[j])
@@ -505,11 +505,11 @@ void _operator_col(
 				outFeatures.push_back(split_means);
 				outFeaIndexs.push_back(index);
 			}
-			else if ("max" == feaAttrib.operators[i])
+			else if (L"max" == feaAttrib.operators[i])
 			{
 				FeatureAttribute outFeaAttrib;
-				outFeaAttrib.name = feaAttrib.name + "_max";
-				outFeaAttrib.command = "split";
+				outFeaAttrib.name = feaAttrib.name + L"_max";
+				outFeaAttrib.command = L"split";
 				for (size_t j = 0; j < split_maxs.size(); j++)
 				{
 					if (false == index[j])
@@ -525,11 +525,11 @@ void _operator_col(
 				outFeatures.push_back(split_maxs);
 				outFeaIndexs.push_back(index);
 			}
-			else if ("min" == feaAttrib.operators[i])
+			else if (L"min" == feaAttrib.operators[i])
 			{
 				FeatureAttribute outFeaAttrib;
-				outFeaAttrib.name = feaAttrib.name + "_min";
-				outFeaAttrib.command = "split";
+				outFeaAttrib.name = feaAttrib.name + L"_min";
+				outFeaAttrib.command = L"split";
 				for (size_t j = 0; j < split_mins.size(); j++)
 				{
 					if (false == index[j])
@@ -554,10 +554,10 @@ template<typename T>
 vector < vector<double>> _col2feature(
 	vector<FeatureAttribute>& outFeaAttribs,
 	vector<T> col,
-	vector<bool>& index,
+	vector<int64_t>& index,
 	FeatureAttribute feaAttrib,
 	vector<T> labels,
-	vector<string> featureNames,
+	vector<wstring> featureNames,
 	vector<vector<double>> featureValues)
 {
 	outFeaAttribs.resize(featureNames.size());
@@ -567,7 +567,7 @@ vector < vector<double>> _col2feature(
 		vector<double> outFeature(col.size(), 0);
 		outFeatures[i] = outFeature;
 		FeatureAttribute outFeaAttrib;
-		outFeaAttrib.name = feaAttrib.name + "_" + featureNames[i];
+		outFeaAttrib.name = feaAttrib.name + L"_" + featureNames[i];
 		outFeaAttribs[i] = outFeaAttrib;
 	}
 	for (size_t i = 0; i < col.size(); i++)
@@ -584,8 +584,8 @@ vector < vector<double>> _col2feature(
 		}
 		else {
 			index[i] = true;
-			string warning_str = "\nWarning!!! Labels have no such '";
-			cout << warning_str << label << "' label!" << endl;
+			wstring warning_str = L"\nWarning!!! Labels have no such '";
+			wcout << warning_str << label << L"' label!" << endl;
 		}
 	}
 	return outFeatures;
@@ -593,7 +593,7 @@ vector < vector<double>> _col2feature(
 
 
 template<typename T>
-void _format_col(vector<T>& col, vector<bool>& index, FeatureAttribute feaAttrib) {
+void _format_col(vector<T>& col, vector<int64_t>& index, FeatureAttribute feaAttrib) {
 	for (size_t i = 0; i < col.size(); i++)
 	{
 		if (is_nan(col[i]))
@@ -609,7 +609,7 @@ void _format_col(vector<T>& col, vector<bool>& index, FeatureAttribute feaAttrib
 }
 
 
-void _format_col(vector<string>& col, vector<bool>& index, FeatureAttribute feaAttrib) {
+void _format_col(vector<wstring>& col, vector<int64_t>& index, FeatureAttribute feaAttrib) {
 	for (size_t i = 0; i < col.size(); i++)
 	{
 		if (is_nan(col[i]))
@@ -618,11 +618,11 @@ void _format_col(vector<string>& col, vector<bool>& index, FeatureAttribute feaA
 		}
 		if (false == index[i])
 		{
-			if ("lower" == feaAttrib.transform)
+			if (L"lower" == feaAttrib.transform)
 			{
 				transform(col[i].begin(), col[i].end(), col[i].begin(), ::tolower);
 			}
-			else if ("upper" == feaAttrib.transform)
+			else if (L"upper" == feaAttrib.transform)
 			{
 				transform(col[i].begin(), col[i].end(), col[i].begin(), ::toupper);
 			}
@@ -676,6 +676,28 @@ vector<T> _count_col(vector<vector<int64_t>>& col_cnts, vector<int64_t>& target_
 /*================================================ Operator C++ <--> Python Transformation Module ===============================================*/
 #ifndef REGION
 
+int64_t PyNumber_AsInt(PyObject* obj) {
+	return PyLong_Check(obj) ? PyLong_AsLongLong(obj)
+		: PyFloat_Check(obj) ? PyFloat_AsDouble(obj)
+		: PyBool_Check(obj) ? PyLong_AsLong(obj)
+		: INT64_NAN;
+}
+
+
+double PyNumber_AsDouble(PyObject* obj) {
+	return PyLong_Check(obj) ? PyLong_AsLongLong(obj)
+		: PyFloat_Check(obj) ? PyFloat_AsDouble(obj)
+		: PyBool_Check(obj) ? PyLong_AsLong(obj)
+		: NAN;
+}
+
+
+wstring PyUnicode_AsWString(PyObject* obj) {
+	Py_ssize_t size;
+	return PyUnicode_Check(obj) ? PyUnicode_AsWideCharString(obj, &size) : L"";
+}
+
+
 vector<int64_t> PyList_AsVecInt(PyObject* pyList)
 {
 	Py_ssize_t pyList_size = PyList_Size(pyList);
@@ -683,7 +705,7 @@ vector<int64_t> PyList_AsVecInt(PyObject* pyList)
 	for (Py_ssize_t i = 0; i < pyList_size; ++i)
 	{
 		PyObject* obj = PyList_GetItem(pyList, i);
-		vec[i] = PyLong_Check(obj) ? PyLong_AsLongLong(obj) : INT64_MAX;
+		vec[i] = PyNumber_AsInt(obj);
 	}
 	return vec;
 }
@@ -694,7 +716,7 @@ PyObject* VecInt_AsPyList(vector<int64_t> vec)
 	PyObject* pyList = PyList_New(vec.size());
 	for (Py_ssize_t i = 0; i < vec.size(); ++i)
 	{
-		int ret = PyList_SetItem(pyList, i, Py_BuildValue("l", vec[i]));
+		int ret = PyList_SetItem(pyList, i, Py_BuildValue("L", vec[i]));
 	}
 	return pyList;
 }
@@ -711,41 +733,6 @@ PyObject* VecVecInt_AsPyList(vector<vector<int64_t>> vec)
 }
 
 
-vector<bool> PyList_AsVecBool(PyObject* pyList)
-{
-	Py_ssize_t pyList_size = PyList_Size(pyList);
-	vector<bool> vec(pyList_size);
-	for (Py_ssize_t i = 0; i < pyList_size; ++i)
-	{
-		PyObject* obj = PyList_GetItem(pyList, i);
-		vec[i] = PyBool_Check(obj) ? PyLong_AsLong(obj) : true;
-	}
-	return vec;
-}
-
-
-PyObject* VecBool_AsPyList(vector<bool> vec)
-{
-	PyObject* pyList = PyList_New(vec.size());
-	for (Py_ssize_t i = 0; i < vec.size(); ++i)
-	{
-		int ret = PyList_SetItem(pyList, i, Py_BuildValue("b", vec[i]));
-	}
-	return pyList;
-}
-
-
-PyObject* VecVecBool_AsPyList(vector<vector<bool>> vec)
-{
-	PyObject* pyList = PyList_New(vec.size());
-	for (size_t i = 0; i < vec.size(); i++)
-	{
-		PyList_SetItem(pyList, i, VecBool_AsPyList(vec[i]));
-	}
-	return pyList;
-}
-
-
 vector<double> PyList_AsVecDouble(PyObject* pyList)
 {
 	Py_ssize_t pyList_size = PyList_Size(pyList);
@@ -753,7 +740,7 @@ vector<double> PyList_AsVecDouble(PyObject* pyList)
 	for (Py_ssize_t i = 0; i < pyList_size; ++i)
 	{
 		PyObject* obj = PyList_GetItem(pyList, i);
-		vec[i] = PyFloat_Check(obj) ? PyFloat_AsDouble(obj) : NAN;
+		vec[i] = PyNumber_AsDouble(obj);
 	}
 	return vec;
 }
@@ -781,31 +768,31 @@ PyObject* VecVecDouble_AsPyList(vector<vector<double>> vec)
 }
 
 
-vector<string> PyList_AsVecStr(PyObject* pyList)
+vector<wstring> PyList_AsVecStr(PyObject* pyList)
 {
 	Py_ssize_t pyList_size = PyList_Size(pyList);
-	vector<string> vec(pyList_size);
+	vector<wstring> vec(pyList_size);
 	for (Py_ssize_t i = 0; i < pyList_size; ++i)
 	{
 		PyObject* obj = PyList_GetItem(pyList, i);
-		vec[i] = PyUnicode_Check(obj) ? PyUnicode_AsUTF8(obj) : "";
+		vec[i] = PyUnicode_AsWString(obj);
 	}
 	return vec;
 }
 
 
-PyObject* VecStr_AsPyList(vector<string> vec)
+PyObject* VecStr_AsPyList(vector<wstring> vec)
 {
 	PyObject* pyList = PyList_New(vec.size());
 	for (Py_ssize_t i = 0; i < vec.size(); ++i)
 	{
-		int ret = PyList_SetItem(pyList, i, Py_BuildValue("s", vec[i]));
+		int ret = PyList_SetItem(pyList, i, Py_BuildValue("u", vec[i]));
 	}
 	return pyList;
 }
 
 
-PyObject* VecVecStr_AsPyList(vector<vector<string>> vec)
+PyObject* VecVecStr_AsPyList(vector<vector<wstring>> vec)
 {
 	PyObject* pyList = PyList_New(vec.size());
 	for (size_t i = 0; i < vec.size(); i++)
@@ -830,74 +817,74 @@ FeatureAttribute PyDict_AsFeaAttrib(PyObject* pyDict)
 	for (Py_ssize_t i = 0; i < pyDictKeysLen; ++i)
 	{
 		PyObject* key = PyList_GetItem(pyDictKeys, i);
-		string key_str = PyUnicode_Check(key) ? PyUnicode_AsUTF8(key) : "";
-		if ("name" == key_str)
+		wstring key_str = PyUnicode_AsWString(key);
+		if (L"name" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
-			string val_str = PyUnicode_Check(value) ? PyUnicode_AsUTF8(value) : "";
+			wstring val_str = PyUnicode_AsWString(value);
 			feaAttrib.name = val_str;
 		}
-		else if ("type" == key_str)
+		else if (L"type" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
-			string val_str = PyUnicode_Check(value) ? PyUnicode_AsUTF8(value) : "";
+			wstring val_str = PyUnicode_AsWString(value);
 			feaAttrib.type = val_str;
 		}
-		else if ("transform" == key_str)
+		else if (L"transform" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
-			string val_str = PyUnicode_Check(value) ? PyUnicode_AsUTF8(value) : "";
+			wstring val_str = PyUnicode_AsWString(value);
 			feaAttrib.transform = val_str;
 		}
-		else if ("unit" == key_str)
+		else if (L"unit" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
-			double t_val = PyFloat_Check(value) ? PyFloat_AsDouble(value) : NAN;
+			double t_val = PyNumber_AsDouble(value);
 			feaAttrib.transform = t_val;
 		}
-		else if ("command" == key_str)
+		else if (L"command" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
-			string val_str = PyUnicode_Check(value) ? PyUnicode_AsUTF8(value) : "";
+			wstring val_str = PyUnicode_AsWString(value);
 			feaAttrib.command = val_str;
 		}
-		else if ("operators" == key_str)
+		else if (L"operators" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
 			for (size_t j = 0; j < PyTuple_Size(value); j++)
 			{
 				PyObject* item = PyTuple_GetItem(value, j);
-				string val_str = PyUnicode_Check(item) ? PyUnicode_AsUTF8(item) : "";
+				wstring val_str = PyUnicode_AsWString(item);
 				feaAttrib.operators.push_back(val_str);
 			}
 		}
-		else if ("group_dists" == key_str)
+		else if (L"group_dists" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
 			for (size_t j = 0; j < PyTuple_Size(value); j++)
 			{
 				PyObject* item = PyTuple_GetItem(value, j);
-				double t_val = PyFloat_Check(item) ? PyFloat_AsDouble(item) : NAN;
+				double t_val = PyNumber_AsDouble(item);
 				feaAttrib.group_dists.push_back(t_val);
 			}
 		}
-		else if ("splits" == key_str)
+		else if (L"splits" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
 			for (size_t j = 0; j < PyTuple_Size(value); j++)
 			{
 				PyObject* item = PyTuple_GetItem(value, j);
-				string val_str = PyUnicode_Check(item) ? PyUnicode_AsUTF8(item) : "";
+				wstring val_str = PyUnicode_AsWString(item);
 				feaAttrib.splits.push_back(val_str);
 			}
 		}
-		else if ("index" == key_str)
+		else if (L"index" == key_str)
 		{
 			PyObject* value = PyDict_GetItem(pyDict, key);
 			for (size_t j = 0; j < PyTuple_Size(value); j++)
 			{
 				PyObject* item = PyTuple_GetItem(value, j);
-				int64_t val = PyLong_Check(item) ? PyLong_AsLongLong(item) : INT64_MAX;
+				int64_t val = PyNumber_AsInt(item);
 				if (0 == j)
 				{
 					feaAttrib.start_index = val;
@@ -942,6 +929,7 @@ PyObject* VecFeaAttrib_AsPyDict(vector<FeatureAttribute> vec)
 	}
 	return pyList;
 }
+
 #endif // !REGION
 
 /*====================================================== Operator Python Module API ======================================================*/
@@ -954,33 +942,33 @@ static PyObject* Operator_operator_col(PyObject* self, PyObject* args)
 		return NULL;
 	}
 	FeatureAttribute feaAttrib = PyDict_AsFeaAttrib(feaAttribObj);
-	vector<bool> index = PyList_AsVecBool(indexObj);
-	if ("float" == feaAttrib.type)
+	vector<int64_t> index = PyList_AsVecInt(indexObj);
+	if (L"float" == feaAttrib.type)
 	{
 		vector<double> col = PyList_AsVecDouble(colObj);
 		vector < vector<int64_t>> outFeatures;
-		vector < vector<bool>> outFeaIndexs;
+		vector < vector<int64_t>> outFeaIndexs;
 		vector<FeatureAttribute> outFeaAttribs;
 		_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecInt_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecBool_AsPyList(outFeaIndexs));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecInt_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecInt_AsPyList(outFeaIndexs));
 	}
-	else if ("int" == feaAttrib.type)
+	else if (L"int" == feaAttrib.type)
 	{
 		vector<int64_t> col = PyList_AsVecInt(colObj);
 		vector < vector<int64_t>> outFeatures;
-		vector < vector<bool>> outFeaIndexs;
+		vector < vector<int64_t>> outFeaIndexs;
 		vector<FeatureAttribute> outFeaAttribs;
 		_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecInt_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecBool_AsPyList(outFeaIndexs));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecInt_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecInt_AsPyList(outFeaIndexs));
 	}
-	else if ("str" == feaAttrib.type || "" == feaAttrib.type)
+	else if (L"str" == feaAttrib.type || L"" == feaAttrib.type)
 	{
-		vector<string> col = PyList_AsVecStr(colObj);
+		vector<wstring> col = PyList_AsVecStr(colObj);
 		vector < vector<double>> outFeatures;
 		vector<FeatureAttribute> outFeaAttribs;
-		vector < vector<bool>> outFeaIndexs;
+		vector < vector<int64_t>> outFeaIndexs;
 		_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecBool_AsPyList(outFeaIndexs));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecInt_AsPyList(outFeaIndexs));
 	}
 	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
 	return NULL;
@@ -994,8 +982,8 @@ static PyObject* Operator_col2feature(PyObject* self, PyObject* args)
 		return NULL;
 	}
 	FeatureAttribute feaAttrib = PyDict_AsFeaAttrib(feaAttribObj);
-	vector<bool> index = PyList_AsVecBool(indexObj);
-	vector<string> featureNames = PyList_AsVecStr(featureNamesObj);
+	vector<int64_t> index = PyList_AsVecInt(indexObj);
+	vector<wstring> featureNames = PyList_AsVecStr(featureNamesObj);
 
 	Py_ssize_t pyList_size = PyList_Size(featureValuesObj);
 	vector<vector<double>> featureValues(pyList_size);
@@ -1005,29 +993,29 @@ static PyObject* Operator_col2feature(PyObject* self, PyObject* args)
 		featureValues[i] = PyList_AsVecDouble(obj);
 	}
 
-	if ("float" == feaAttrib.type)
+	if (L"float" == feaAttrib.type)
 	{
 		vector<double> col = PyList_AsVecDouble(colObj);
 		vector<double> labels = PyList_AsVecDouble(labelsObj);
 		vector<FeatureAttribute> outFeaAttribs;
 		vector < vector<double>> outFeatures = _col2feature(outFeaAttribs, col, index, feaAttrib, labels, featureNames, featureValues);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecBool_AsPyList(index));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecInt_AsPyList(index));
 	}
-	else if ("int" == feaAttrib.type)
+	else if (L"int" == feaAttrib.type)
 	{
 		vector<int64_t> col = PyList_AsVecInt(colObj);
 		vector<int64_t> labels = PyList_AsVecInt(labelsObj);
 		vector<FeatureAttribute> outFeaAttribs;
 		vector < vector<double>> outFeatures = _col2feature(outFeaAttribs, col, index, feaAttrib, labels, featureNames, featureValues);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecBool_AsPyList(index));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecInt_AsPyList(index));
 	}
-	else if ("str" == feaAttrib.type || "" == feaAttrib.type)
+	else if (L"str" == feaAttrib.type || L"" == feaAttrib.type)
 	{
-		vector<string> col = PyList_AsVecStr(colObj);
-		vector<string> labels = PyList_AsVecStr(labelsObj);
+		vector<wstring> col = PyList_AsVecStr(colObj);
+		vector<wstring> labels = PyList_AsVecStr(labelsObj);
 		vector<FeatureAttribute> outFeaAttribs;
 		vector < vector<double>> outFeatures = _col2feature(outFeaAttribs, col, index, feaAttrib, labels, featureNames, featureValues);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecBool_AsPyList(index));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecInt_AsPyList(index));
 	}
 	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
 	return NULL;
@@ -1041,24 +1029,24 @@ static PyObject* Operator_format_col(PyObject* self, PyObject* args)
 		return NULL;
 	}
 	FeatureAttribute feaAttrib = PyDict_AsFeaAttrib(feaAttribObj);
-	vector<bool> index = PyList_AsVecBool(indexObj);
-	if ("float" == feaAttrib.type)
+	vector<int64_t> index = PyList_AsVecInt(indexObj);
+	if (L"float" == feaAttrib.type)
 	{
 		vector<double> col = PyList_AsVecDouble(colObj);
 		_format_col(col, index, feaAttrib);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecDouble_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecBool_AsPyList(index));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecDouble_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecInt_AsPyList(index));
 	}
-	else if ("int" == feaAttrib.type)
+	else if (L"int" == feaAttrib.type)
 	{
 		vector<int64_t> col = PyList_AsVecInt(colObj);
 		_format_col(col, index, feaAttrib);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecInt_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecBool_AsPyList(index));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecInt_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecInt_AsPyList(index));
 	}
-	else if ("str" == feaAttrib.type)
+	else if (L"str" == feaAttrib.type)
 	{
-		vector<string> col = PyList_AsVecStr(colObj);
+		vector<wstring> col = PyList_AsVecStr(colObj);
 		_format_col(col, index, feaAttrib);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecStr_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecBool_AsPyList(index));
+		return (PyObject*)Py_BuildValue("(O,O,O)", VecStr_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecInt_AsPyList(index));
 	}
 	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
 	return NULL;
@@ -1073,7 +1061,7 @@ static PyObject* Operator_count_col(PyObject* self, PyObject* args)
 	}
 	vector<int64_t>targets = PyList_AsVecInt(targetsObj);
 	FeatureAttribute feaAttrib = PyDict_AsFeaAttrib(feaAttribObj);
-	if ("float" == feaAttrib.type)
+	if (L"float" == feaAttrib.type)
 	{
 		vector<double> col = PyList_AsVecDouble(colObj);
 		vector<vector<int64_t>> col_cnts;
@@ -1081,7 +1069,7 @@ static PyObject* Operator_count_col(PyObject* self, PyObject* args)
 		vector<double> labels = _count_col(col_cnts, target_nums, targets, col);
 		return (PyObject*)Py_BuildValue("(O,O,O)", VecDouble_AsPyList(labels), VecVecInt_AsPyList(col_cnts), VecInt_AsPyList(target_nums));
 	}
-	else if ("int" == feaAttrib.type)
+	else if (L"int" == feaAttrib.type)
 	{
 		vector<int64_t> col = PyList_AsVecInt(colObj);
 		vector<vector<int64_t>> col_cnts;
@@ -1089,12 +1077,12 @@ static PyObject* Operator_count_col(PyObject* self, PyObject* args)
 		vector<int64_t> labels = _count_col(col_cnts, target_nums, targets, col);
 		return (PyObject*)Py_BuildValue("(O,O,O)", VecInt_AsPyList(labels), VecVecInt_AsPyList(col_cnts), VecInt_AsPyList(target_nums));
 	}
-	else if ("str" == feaAttrib.type || "" == feaAttrib.type)
+	else if (L"str" == feaAttrib.type || L"" == feaAttrib.type)
 	{
-		vector<string> col = PyList_AsVecStr(colObj);
+		vector<wstring> col = PyList_AsVecStr(colObj);
 		vector<vector<int64_t>> col_cnts;
 		vector<int64_t> target_nums;
-		vector<string> labels = _count_col(col_cnts, target_nums, targets, col);
+		vector<wstring> labels = _count_col(col_cnts, target_nums, targets, col);
 		return (PyObject*)Py_BuildValue("(O,O,O)", VecStr_AsPyList(labels), VecVecInt_AsPyList(col_cnts), VecInt_AsPyList(target_nums));
 	}
 	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
@@ -1151,26 +1139,26 @@ void PyInit_Operator() {
 #endif // !REGION
 
 /*====================================================== Operator Test Module ======================================================*/
-//#define TEST_FLAG
+#define TEST_FLAG
 #ifdef TEST_FLAG
 
 bool test_operator_col_double() {
 	vector < vector<int64_t>> outFeatures;
-	vector < vector<bool>> outFeaIndexs;
+	vector < vector<int64_t>> outFeaIndexs;
 	vector<FeatureAttribute> outFeaAttribs;
 	vector<double> col = { 1234567890 , 2234567890 };
-	vector<bool> index = { false, false };
+	vector<int64_t> index = { false, false };
 	FeatureAttribute feaAttrib;
 
-	feaAttrib.name = "testName";
-	feaAttrib.command = "None";
+	feaAttrib.name = L"testName";
+	feaAttrib.command = L"None";
 	_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
 
-	feaAttrib.command = "timestamp";
-	feaAttrib.operators = { "sec" , "min", "hour","mday" ,"mon" ,"year" ,"wday" ,"yday" ,"isdst" };
+	feaAttrib.command = L"timestamp";
+	feaAttrib.operators = { L"sec" , L"min", L"hour",L"mday" ,L"mon" ,L"year" ,L"wday" ,L"yday" ,L"isdst" };
 	_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
 
-	feaAttrib.command = "group";
+	feaAttrib.command = L"group";
 	feaAttrib.group_dists = { 2,5,0.2 };
 	_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
 	printf("\ntest_operator_col_double () test ok!\n");
@@ -1180,23 +1168,23 @@ bool test_operator_col_double() {
 
 bool test_operator_col_string() {
 	vector < vector<double>> outFeatures;
-	vector < vector<bool>> outFeaIndexs;
+	vector < vector<int64_t>> outFeaIndexs;
 	vector<FeatureAttribute> outFeaAttribs;
-	vector<string> col = { "a:3.4|b:6.5" , "abb:56.62234567890|bbb:" };
-	vector<bool> index = { false, false };
+	vector<wstring> col = { L"a中文:3.4|b:6.5" , L"abb:56.62234567890|bbb:" };
+	vector<int64_t> index = { false, false };
 	FeatureAttribute feaAttrib;
 
-	feaAttrib.name = "testName";
-	feaAttrib.command = "split";
-	feaAttrib.operators = { "len","sum","mean","max","min" };
-	feaAttrib.splits = { "|",":" };
+	feaAttrib.name = L"testName";
+	feaAttrib.command = L"split";
+	feaAttrib.operators = { L"len",L"sum",L"mean",L"max",L"min" };
+	feaAttrib.splits = { L"|",L":" };
 	feaAttrib.group_dists = { 2,5,0.2,5,0.5 };
 	_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
 
-	col = { "[app_1 ]" , "" };
-	feaAttrib.command = "split";
-	feaAttrib.operators = { "len" };
-	feaAttrib.splits = { " " };
+	col = { L"[app_1 ]" ,L"" };
+	feaAttrib.command = L"split";
+	feaAttrib.operators = { L"len" };
+	feaAttrib.splits = { L" " };
 	feaAttrib.group_dists = { 2 };
 	feaAttrib.start_index = 1;
 	feaAttrib.end_index = -2;
@@ -1208,14 +1196,14 @@ bool test_operator_col_string() {
 
 bool test_col2feature() {
 	vector<FeatureAttribute> outFeaAttribs;
-	vector<string> col = { "1","2","3" };
-	vector<bool> index = { false,false,false };
+	vector<wstring> col = { L"1",L"2",L"3" };
+	vector<int64_t> index = { false,false,false };
 	FeatureAttribute feaAttrib;
-	vector<string> labels = { "1","2" };
-	vector<string> featureNames = { "A","B","C" };
+	vector<wstring> labels = { L"1",L"2" };
+	vector<wstring> featureNames = { L"A",L"B",L"C" };
 	vector<vector<double>> featureValues(3);
 
-	feaAttrib.name = "testName";
+	feaAttrib.name = L"testName";
 	featureValues[0] = { 0,1 };
 	featureValues[1] = { 2,3 };
 	featureValues[2] = { 4,5 };
@@ -1236,6 +1224,11 @@ bool test_count_col() {
 }
 
 
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif // _MSC_VER
+
+
 int main(int argc, char* argv[])
 {
 	test_operator_col_double();
@@ -1243,10 +1236,15 @@ int main(int argc, char* argv[])
 	test_col2feature();
 	test_count_col();
 
-	Py_SetPythonHome(L"D:\\Install\\Anaconda3");
+	Py_SetPythonHome(L"D:/Install/Anaconda3");
 	Py_Initialize();
 	PyRun_SimpleString("import sys");
 	PyRun_SimpleString("sys.path.append('./')");
+
+	//PyRun_SimpleString("sys.path.append('D:/home/undone-work/master-graduate/code/open_source_projects/Nopimal/code/classification')");
+	//string curr_dir = "D:/home/undone-work/master-graduate/code/open_source_projects/Nopimal/code/classification";
+	//SetCurrentDirectoryA(curr_dir.c_str());  //设置
+	//printf("current working directory: %s\n", curr_dir.c_str());
 
 	PyObject* pModule;
 	PyObject* py_func, *py_ret, *retObj;
@@ -1276,7 +1274,7 @@ int main(int argc, char* argv[])
 	py_ret = PyObject_CallFunction(py_func, NULL);
 
 	vector<double> vec_double = PyList_AsVecDouble(py_ret);
-	vector<string> vec_str = PyList_AsVecStr(py_ret);
+	vector<wstring> vec_str = PyList_AsVecStr(py_ret);
 	vector<int64_t> vec_int = PyList_AsVecInt(py_ret);
 
 	Py_Finalize();
