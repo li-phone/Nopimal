@@ -35,6 +35,7 @@
 #include <map>
 #include <algorithm>
 #include <math.h>
+#include <locale>
 #include <Python.h>
 #include <iostream>
 
@@ -620,11 +621,11 @@ void _format_col(vector<wstring>& col, vector<int64_t>& index, FeatureAttribute 
 		{
 			if (L"lower" == feaAttrib.transform)
 			{
-				transform(col[i].begin(), col[i].end(), col[i].begin(), ::tolower);
+				transform(col[i].begin(), col[i].end(), col[i].begin(), ::towlower);
 			}
 			else if (L"upper" == feaAttrib.transform)
 			{
-				transform(col[i].begin(), col[i].end(), col[i].begin(), ::toupper);
+				transform(col[i].begin(), col[i].end(), col[i].begin(), ::towupper);
 			}
 		}
 	}
@@ -694,7 +695,9 @@ double PyNumber_AsDouble(PyObject* obj) {
 
 wstring PyUnicode_AsWString(PyObject* obj) {
 	Py_ssize_t size;
-	return PyUnicode_Check(obj) ? PyUnicode_AsWideCharString(obj, &size) : L"";
+	wstring wstr = PyUnicode_Check(obj) ? PyUnicode_AsWideCharString(obj, &size)
+		: L"";
+	return wstr;
 }
 
 
@@ -786,7 +789,7 @@ PyObject* VecStr_AsPyList(vector<wstring> vec)
 	PyObject* pyList = PyList_New(vec.size());
 	for (Py_ssize_t i = 0; i < vec.size(); ++i)
 	{
-		int ret = PyList_SetItem(pyList, i, Py_BuildValue("u", vec[i]));
+		int ret = PyList_SetItem(pyList, i, Py_BuildValue("u", vec[i].c_str()));
 	}
 	return pyList;
 }
@@ -904,17 +907,17 @@ PyObject* FeaAttrib_AsPyDict(FeatureAttribute feaAttrib)
 {
 	PyObject* pyDict = PyDict_New();
 
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "name"), Py_BuildValue("s", feaAttrib.name));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "type"), Py_BuildValue("s", feaAttrib.type));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "transform"), Py_BuildValue("s", feaAttrib.transform));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "unit"), Py_BuildValue("d", feaAttrib.unit));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "command"), Py_BuildValue("s", feaAttrib.command));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "operators"), VecStr_AsPyList(feaAttrib.operators));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "group_dists"), VecDouble_AsPyList(feaAttrib.group_dists));
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "splits"), VecStr_AsPyList(feaAttrib.splits));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"name"), Py_BuildValue("u", feaAttrib.name.c_str()));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"type"), Py_BuildValue("u", feaAttrib.type.c_str()));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"transform"), Py_BuildValue("u", feaAttrib.transform.c_str()));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"unit"), Py_BuildValue("d", feaAttrib.unit));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"command"), Py_BuildValue("u", feaAttrib.command.c_str()));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"operators"), VecStr_AsPyList(feaAttrib.operators));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"group_dists"), VecDouble_AsPyList(feaAttrib.group_dists));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"splits"), VecStr_AsPyList(feaAttrib.splits));
 
 	vector<int64_t> vec = { feaAttrib.start_index, feaAttrib.end_index };
-	PyDict_SetItem(pyDict, Py_BuildValue("s", "index"), VecInt_AsPyList(vec));
+	PyDict_SetItem(pyDict, Py_BuildValue("u", L"index"), VecInt_AsPyList(vec));
 
 	return pyDict;
 }
@@ -1139,7 +1142,7 @@ void PyInit_Operator() {
 #endif // !REGION
 
 /*====================================================== Operator Test Module ======================================================*/
-#define TEST_FLAG
+//#define TEST_FLAG
 #ifdef TEST_FLAG
 
 bool test_operator_col_double() {
@@ -1243,14 +1246,18 @@ int main(int argc, char* argv[])
 
 	//PyRun_SimpleString("sys.path.append('D:/home/undone-work/master-graduate/code/open_source_projects/Nopimal/code/classification')");
 	//string curr_dir = "D:/home/undone-work/master-graduate/code/open_source_projects/Nopimal/code/classification";
-	//SetCurrentDirectoryA(curr_dir.c_str());  //设置
+	//SetCurrentDirectoryA(curr_dir.c_str());  //设置split_chunks
 	//printf("current working directory: %s\n", curr_dir.c_str());
+	//PyObject* pModule;
+	//PyObject* py_func, *py_ret, *retObj;
+	//pModule = PyImport_ImportModule("split_chunks");
+	//py_func = PyObject_GetAttrString(pModule, "main");
 
 	PyObject* pModule;
-	PyObject* py_func, *py_ret, *retObj;
+	PyObject* py_func, * py_ret, * retObj;
 	pModule = PyImport_ImportModule("operator_module_test");
-
 	py_func = PyObject_GetAttrString(pModule, "format_col");
+
 	py_ret = PyObject_CallFunction(py_func, NULL);
 	retObj = Operator_format_col(py_ret, py_ret);
 	printf("\nformat_col () test ok!\n");

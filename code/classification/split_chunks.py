@@ -67,10 +67,10 @@ def format_df(raw_df, feature_names):
         col = list(raw_df[r['name']])
         c_idx = [True if _ != _ else False for _ in col]
         if 'type' in r:
-            col, c_idx, _ = opt.format_col(col, r, c_idx)
+            col, _, c_idx = opt.format_col(col, r, c_idx)
         # new_col = format_col(col, r, c_idx)
-        raw_index_df[r['name']] = np.array(c_idx).astype(np.bool)
         raw_df[r['name']] = col
+        raw_index_df[r['name']] = c_idx
     return raw_df, raw_index_df
 
 
@@ -96,7 +96,7 @@ def split_chunk(raw_files, other_train_files, save_dir, mode='train'):
             assert raw_shape[0] == raw_df.shape[0]
 
         raw_df, raw_idx_df = format_df(raw_df, features_names)
-        # format_df(raw_df, features_names)
+        # return format_df(raw_df, features_names)
 
         hfs = pd.HDFStore(save_name, complevel=5)
         hfs['raw_df'] = raw_df  # write to HDF5
