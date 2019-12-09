@@ -10,10 +10,12 @@ Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz，2001 Mhz
 
 #### Elapsed Time
 
-| Module Name | Pure Python | C++ Extension | 
+| Module Name | Pure Python | Python C++ Extension |
 | :---------: | :---------: | :-----------: |
-| split_chunks  | 6it [00:43,  7.59s/it] | ??? 
-| ???  | ??? | ???
+| format_df  | 57it [10:52, 16.05s/20w/it] | unnecessary
+| operator_df  | 40.73s/20w/it | unnecessary
+| count_df  | s/20w/it | unnecessary
+| col2feature  | ??? | unnecessary
 
 #### 安装教程
 

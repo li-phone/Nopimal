@@ -21,7 +21,8 @@ raw_train_file = dict(
         dict(name='device_version', type='str', transform='lower'),
         dict(name='lng', type='float', command='group', group_dists=(10,)),
         dict(name='lat', type='float', command='group', group_dists=(10,)),
-        dict(name='ts', type='int', unit=1 / 1000, command='timestamp', operators=('hour', 'week'))
+        dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
+             operators=('sec', 'min', 'hour', 'mday', 'mon', 'year', 'wday'))
     ]
 )
 raw_test_file = dict(
@@ -36,7 +37,8 @@ raw_test_file = dict(
         dict(name='netmodel', type='str', transform='lower'),
         dict(name='osversion', type='str', transform='lower'),
         dict(name='device_version', type='str', transform='lower'),
-        dict(name='ts', type='float', unit=1 / 1000, command='timestamp', operators=('hour', 'week'))
+        dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
+             operators=('sec', 'min', 'hour', 'mday', 'mon', 'year', 'wday'))
         # command命令用来求取特征, 非command命令只是做一些变换, 并没有用来求取特征
     ]
 )
@@ -55,8 +57,10 @@ other_train_files = [
         primary_key='deviceid',
         keep='last',
         features_names=[
-            dict(name='outertag', command='split', operators=('len','sum','mean','min','max'), group_dists=(2, 1, 0.2), splits=('|',':'),),
-            dict(name='tag', command='split', operators=('len','sum','mean','min','max',), group_dists=(2, 10, 2), splits=('|',':'),),
+            dict(name='outertag', command='split', operators=('len', 'sum', 'mean', 'min', 'max'),
+                 group_dists=(2, 1, 0.2, 1, 1), splits=('|', ':'), ),
+            dict(name='tag', command='split', operators=('len', 'sum', 'mean', 'min', 'max',),
+                 group_dists=(2, 10, 2, 1, 10), splits=('|', ':'), ),
             dict(name='personidentification'),
             dict(name='gender'),
             dict(name='level', type='float', command='group', group_dists=(5,)),

@@ -39,6 +39,76 @@ from utils import *
 
 
 
+def _raw2feature(raw_np, np.ndarray[np.str] keep_names, dict feature_dict, str label,
+                  np.ndarray[np.str] feature_keys):
+    results = []
+    for raw_r in raw_np:
+        rst_r = {keep_names[0]: raw_r[0]}
+
+        for j in xrange(1, keep_names.shape[0]):
+            keep_name = keep_names[j]
+            label = str(raw_r[j])
+            if _is_nan(label):
+                label = str(label).lower()
+            f = feature_dict[keep_name]
+            dict_idx = f[label].index(label)
+            for k in feature_keys:
+                cat_rate = f[k][dict_idx]
+                rst_r[str(keep_name) + "_" + k] = cat_rate
+        results.append(rst_r)
+    results_np = [[v for k, v in r.items()] for r in results]
+    results_np = np.array(results_np)
+    columns = [k for k, v in results[0].items()]
+    return results_np, columns
+
+
+def _split_groups(col, int group_dist=-1, c_idx=None):
+    if group_dist <= 0:
+        return col
+    if c_idx is None:
+        #     千万级别以上数据量计算速度慢, 共用索引是为了加速计算
+        c_idx = [True if is_nan(_) else False for _ in col]
+    assert c_idx is not None
+
+    col_not_nan = [x for i, x in enumerate(col) if not c_idx[i]]
+    if len(col_not_nan) == 0:
+        return col
+
+    # 如果为0
+    grp_dist = sys.float_info.max if group_dist == 0 else group_dist
+    col = [x if c_idx[i] else int(x // grp_dist) for i, x in enumerate(col)]
+    return col
+
+
+def _save_feature_df(raw_df, keep_names, save_name, feature_dict):
+    results = []
+    for i in range(raw_df.shape[0]):
+        raw_r = raw_df.iloc[i]
+        rst_r = {keep_names[0]: raw_r[keep_names[0]]}
+
+        for j in range(1, len(keep_names)):
+            k = keep_names[j]
+            label = str(raw_r[k])
+            if is_nan(label):
+                label = str(label).lower()
+            f = feature_dict[k]
+            dict_idx = f['label'].index(label)
+            cat_rate = f['category_rate'][dict_idx]
+            clk_rate = f['click_rate'][dict_idx]
+            clk_prob = f['click_probability'][dict_idx]
+            rst_r[str(k) + "_cat_rate"] = clk_rate
+            rst_r[str(k) + "_clk_rate"] = clk_rate
+            rst_r[str(k) + "_clk_prob"] = clk_prob
+        results.append(rst_r)
+    results_np = [[v for k, v in r.items()] for r in results]
+    results_np = np.array(results_np)
+    columns = [k for k, v in results[0].items()]
+    feature_df = pd.DataFrame(data=results_np, columns=columns)
+
+    hfs = pd.HDFStore(save_name, complevel=6)
+    hfs['feature_df'] = feature_df  # write to HDF5
+    hfs.close()
+
 
 def gen_feature(chunk_paths, raw_file, other_files, feature_dict, save_dir, mode='train'):
     for idx, chunk_path in tqdm(enumerate(chunk_paths)):
@@ -62,7 +132,6 @@ def gen_feature(chunk_paths, raw_file, other_files, feature_dict, save_dir, mode
         keep_names = [r['name'] for r in features_names if 'operator' not in r or r['operator'] == 'group']
         raw_df = raw_df[keep_names]
         save_feature_df(raw_df, keep_names, save_name, feature_dict)
-
 
 def main():
     # 预先定义环境

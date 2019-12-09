@@ -21,57 +21,11 @@
 # SOFTWARE.
 
 
-import seaborn as sns
-import matplotlib.pyplot as plt
 import pandas as pd
 from tqdm import tqdm
 import os
-import numpy as np
-import scipy.stats as sci
-import datetime
-import math
-import json
-from numba import jit
-import sys
-import Operator as opt
-from utils import *
-
-
-def format_col(col, r, c_idx):
-    if 'type' in r:
-        if r['type'] == 'str':
-            if 'lower' in r and r['lower'] is True:
-                new_col = [x if c_idx[i] else str(x).lower() for i, x in enumerate(col)]
-            else:
-                new_col = [x if c_idx[i] else str(x) for i, x in enumerate(col)]
-
-        elif r['type'] == 'int':
-            new_col = [x if c_idx[i] else int(x) for i, x in enumerate(col)]
-
-        elif r['type'] == 'float':
-            new_col = [x if c_idx[i] else float(x) for i, x in enumerate(col)]
-
-        elif r['type'] == 'timestamp':
-            pass
-
-        else:
-            raise Exception('No "{}" such type!!!'.format(r['type']))
-    return new_col
-
-
-def format_df(raw_df, feature_names):
-    # 统一格式
-    raw_index_df = pd.DataFrame()
-    for r in feature_names:
-        # 千万级别以上数据量计算速度慢, 共用索引是为了加速计算
-        col = list(raw_df[r['name']])
-        c_idx = [True if _ != _ else False for _ in col]
-        if 'type' in r:
-            col, _, c_idx = opt.format_col(col, r, c_idx)
-        # new_col = format_col(col, r, c_idx)
-        raw_df[r['name']] = col
-        raw_index_df[r['name']] = c_idx
-    return raw_df, raw_index_df
+from operator_module.py_operator import *
+from operator_module.utils import *
 
 
 def split_chunk(raw_files, other_train_files, save_dir, mode='train'):
@@ -95,12 +49,10 @@ def split_chunk(raw_files, other_train_files, save_dir, mode='train'):
             raw_df = pd.merge(raw_df, other_df, how='left', on=other_file['primary_key'])
             assert raw_shape[0] == raw_df.shape[0]
 
-        raw_df, raw_idx_df = format_df(raw_df, features_names)
-        # return format_df(raw_df, features_names)
+        raw_df = format_df(raw_df, features_names)
 
-        hfs = pd.HDFStore(save_name, complevel=5)
+        hfs = pd.HDFStore(save_name, complevel=6)
         hfs['raw_df'] = raw_df  # write to HDF5
-        hfs['raw_idx_df'] = raw_idx_df  # write to HDF5
         hfs.close()
 
 
@@ -112,7 +64,6 @@ def main():
     mkdirs(cfg.test_chunk_path)
 
     split_chunk(cfg.raw_train_file, cfg.other_train_files, cfg.train_chunk_path, mode='train')
-
     split_chunk(cfg.raw_test_file, cfg.other_train_files, cfg.test_chunk_path, mode='test')
     print('split to chunks successfully!')
 

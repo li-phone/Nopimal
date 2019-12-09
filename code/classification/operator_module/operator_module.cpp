@@ -310,6 +310,9 @@ void _operator_col(
 				{
 					outFeature[i] = get_tm_type(ttimes[i], *op);
 				}
+				else {
+					outFeature[i] = INT64_NAN;
+				}
 			}
 			outFeaAttribs.push_back(outFeaAttrib);
 			outFeatures.push_back(outFeature);
@@ -361,22 +364,14 @@ void _operator_col(
 			}
 			if (false == index[i])
 			{
-				if (feaAttrib.start_index != feaAttrib.end_index)
+				if (!(feaAttrib.start_index == feaAttrib.end_index && feaAttrib.start_index == 0))
 				{
-					if (feaAttrib.end_index < 0)
+					int s = feaAttrib.start_index < 0 ? col[i].length() + feaAttrib.start_index : feaAttrib.start_index;
+					int e = feaAttrib.end_index < 0 ? col[i].length() + feaAttrib.end_index : feaAttrib.end_index;
+					if (feaAttrib.start_index <= col[i].length())
 					{
-						if (feaAttrib.start_index <= col[i].length())
-						{
-							col[i] = col[i].substr(feaAttrib.start_index, col[i].length() + feaAttrib.end_index - feaAttrib.start_index);
-
-						}
-
+						col[i] = col[i].substr(s, e-s);
 					}
-					else {
-						col[i] = col[i].substr(feaAttrib.start_index, feaAttrib.end_index);
-
-					}
-
 				}
 				split_group = str_split(col[i], feaAttrib.splits[0]);
 				for (size_t j = 0; j < split_group.size(); j++)
@@ -395,17 +390,15 @@ void _operator_col(
 						else {
 							split_group[j] = L"0";
 						}
-
 					}
 				}
 			}
 			split_groups[i] = split_group;
 		}
 		vector<vector<double>> split_values(col.size());
-		vector<double> split_sums(col.size()), split_means(col.size()), split_maxs(col.size()), split_mins(col.size());
+		vector<double> split_sums(col.size(), NAN), split_means(col.size(), NAN), split_maxs(col.size(), NAN), split_mins(col.size(), NAN);
 		if (feaAttrib.operators.size() >= 2)
 		{
-
 			for (size_t i = 0; i < split_groups.size(); i++)
 			{
 				vector<double> split_value;
@@ -426,21 +419,6 @@ void _operator_col(
 				}
 			}
 		}
-		else {
-			for (size_t i = 0; i < split_groups.size(); i++)
-			{
-				vector<double> split_value;
-				if (false == index[i])
-				{
-					for (size_t j = 0; j < split_groups[i].size(); j++)
-					{
-						double f = 1.0;
-						split_value.push_back(f);
-					}
-					split_values[i] = split_value;
-				}
-			}
-		}
 
 		for (size_t i = 0; i < feaAttrib.operators.size(); i++)
 		{
@@ -449,12 +427,12 @@ void _operator_col(
 				FeatureAttribute outFeaAttrib;
 				outFeaAttrib.name = feaAttrib.name + L"_len";
 				outFeaAttrib.command = L"split";
-				vector<double> outFeature(col.size());
+				vector<double> outFeature(col.size(), 0);
 				for (size_t j = 0; j < outFeature.size(); j++)
 				{
 					if (false == index[j])
 					{
-						outFeature[j] = split_values[j].size();
+						outFeature[j] = split_groups[j].size();
 						double grp_dist = feaAttrib.group_dists[i];
 						if (grp_dist > 0)
 						{
@@ -604,7 +582,7 @@ void _format_col(vector<T>& col, vector<int64_t>& index, FeatureAttribute feaAtt
 		if (false == index[i])
 		{
 			double grp_dist = feaAttrib.unit;
-			col[i] = col[i] * 1.0 / grp_dist;
+			col[i] = col[i] * grp_dist;
 		}
 	}
 }
@@ -632,46 +610,6 @@ void _format_col(vector<wstring>& col, vector<int64_t>& index, FeatureAttribute 
 }
 
 
-template<typename T>
-vector<T> _count_col(vector<vector<int64_t>>& col_cnts, vector<int64_t>& target_nums, vector<int64_t>targets, vector<T> col) {
-	vector<int64_t> target_keys;
-	map<int64_t, int> target_map = vec_unique(targets, target_keys);
-	sort(target_keys.begin(), target_keys.end());
-	vector<int64_t> target_values = map_key_value(target_map, target_keys);
-
-	vector<T> col_keys;
-	map<T, int> col_map = vec_unique(col, col_keys);
-	sort(col_keys.begin(), col_keys.end());
-	vector<int64_t> col_values = map_key_value(col_map, col_keys);
-	col_cnts.resize(col_keys.size());
-	for (size_t i = 0; i < col_keys.size(); i++)
-	{
-		vector<T>keep_vals;
-		vector<int>keep_idxs;
-		vec_where(keep_vals, keep_idxs, col, col_keys[i]);
-		vector<int64_t> keep_target = vec_keep(targets, keep_idxs);
-		vector<int64_t> cnt(target_keys.size(), 0);
-		for (size_t j = 0; j < target_keys.size(); j++)
-		{
-			vector<int64_t> keep_target_map_keys;
-			map<int64_t, int> keep_target_map = vec_unique(keep_target, keep_target_map_keys);
-			if (keep_target_map.find(target_keys[j]) != keep_target_map.end())
-			{
-				cnt[j] = keep_target_map[target_keys[j]];
-			}
-			else {
-				cnt[j] = 0;
-			}
-		}
-		col_cnts[i] = cnt;
-	}
-	target_nums.resize(target_keys.size());
-	for (size_t j = 0; j < target_keys.size(); j++)
-	{
-		target_nums[j] = target_map[target_keys[j]];
-	}
-	return col_keys;
-}
 #endif // !REGION
 
 /*================================================ Operator C++ <--> Python Transformation Module ===============================================*/
@@ -933,6 +871,15 @@ PyObject* VecFeaAttrib_AsPyDict(vector<FeatureAttribute> vec)
 	return pyList;
 }
 
+
+PyObject* map2PyDict(vector<wstring> keys, vector<int64_t> values) {
+	PyObject* pyDict = PyDict_New();
+	for (size_t i = 0; i < keys.size(); i++)
+	{
+		PyDict_SetItem(pyDict, Py_BuildValue("u", keys[i].c_str()), Py_BuildValue("L", values[i]));
+	}
+	return pyDict;
+}
 #endif // !REGION
 
 /*====================================================== Operator Python Module API ======================================================*/
@@ -973,7 +920,7 @@ static PyObject* Operator_operator_col(PyObject* self, PyObject* args)
 		_operator_col(outFeatures, outFeaIndexs, outFeaAttribs, col, index, feaAttrib);
 		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecVecInt_AsPyList(outFeaIndexs));
 	}
-	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
+	PyErr_SetString(PyExc_TypeError, "int or str or float type is expected!");
 	return NULL;
 }
 
@@ -1020,7 +967,7 @@ static PyObject* Operator_col2feature(PyObject* self, PyObject* args)
 		vector < vector<double>> outFeatures = _col2feature(outFeaAttribs, col, index, feaAttrib, labels, featureNames, featureValues);
 		return (PyObject*)Py_BuildValue("(O,O,O)", VecVecDouble_AsPyList(outFeatures), VecFeaAttrib_AsPyDict(outFeaAttribs), VecInt_AsPyList(index));
 	}
-	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
+	PyErr_SetString(PyExc_TypeError, "int or str or float type is expected!");
 	return NULL;
 }
 
@@ -1051,68 +998,69 @@ static PyObject* Operator_format_col(PyObject* self, PyObject* args)
 		_format_col(col, index, feaAttrib);
 		return (PyObject*)Py_BuildValue("(O,O,O)", VecStr_AsPyList(col), FeaAttrib_AsPyDict(feaAttrib), VecInt_AsPyList(index));
 	}
-	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
+	PyErr_SetString(PyExc_TypeError, "int or str or float type is expected!");
 	return NULL;
+}
+
+
+PyObject* _count_col(PyObject** target_dict, vector<wstring>targets, vector<wstring> col) {
+	vector<wstring> target_keys;
+	map<wstring, int> target_map = vec_unique(targets, target_keys);
+	sort(target_keys.begin(), target_keys.end());
+	vector<int64_t> target_values = map_key_value(target_map, target_keys);
+	*target_dict = map2PyDict(target_keys, target_values);
+
+	vector<wstring> col_keys;
+	map<wstring, int> col_map = vec_unique(col, col_keys);
+	sort(col_keys.begin(), col_keys.end());
+	vector<int64_t> col_values = map_key_value(col_map, col_keys);
+
+	PyObject* col_cnt_dict = PyDict_New();
+	for (size_t i = 0; i < col_keys.size(); i++)
+	{
+		vector<wstring>keep_vals;
+		vector<int>keep_idxs;
+		vec_where(keep_vals, keep_idxs, col, col_keys[i]);
+		vector<wstring> keep_target = vec_keep(targets, keep_idxs);
+		vector<wstring> keep_target_map_keys;
+		map<wstring, int> keep_target_map = vec_unique(keep_target, keep_target_map_keys);
+		vector<int64_t> keep_target_map_values = map_key_value(keep_target_map, keep_target_map_keys);
+
+		PyDict_SetItem(col_cnt_dict, Py_BuildValue("u", col_keys[i].c_str()), map2PyDict(keep_target_map_keys, keep_target_map_values));
+	}
+	return col_cnt_dict;
 }
 
 
 static PyObject* Operator_count_col(PyObject* self, PyObject* args)
 {
-	PyObject* targetsObj, * colObj, * feaAttribObj;
-	if (!PyArg_ParseTuple(args, "OOO", &targetsObj, &colObj, &feaAttribObj)) {
+	PyObject* targetsObj, * colObj;
+	if (!PyArg_ParseTuple(args, "OO", &targetsObj, &colObj)) {
 		return NULL;
 	}
-	vector<int64_t>targets = PyList_AsVecInt(targetsObj);
-	FeatureAttribute feaAttrib = PyDict_AsFeaAttrib(feaAttribObj);
-	if (L"float" == feaAttrib.type)
-	{
-		vector<double> col = PyList_AsVecDouble(colObj);
-		vector<vector<int64_t>> col_cnts;
-		vector<int64_t> target_nums;
-		vector<double> labels = _count_col(col_cnts, target_nums, targets, col);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecDouble_AsPyList(labels), VecVecInt_AsPyList(col_cnts), VecInt_AsPyList(target_nums));
-	}
-	else if (L"int" == feaAttrib.type)
-	{
-		vector<int64_t> col = PyList_AsVecInt(colObj);
-		vector<vector<int64_t>> col_cnts;
-		vector<int64_t> target_nums;
-		vector<int64_t> labels = _count_col(col_cnts, target_nums, targets, col);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecInt_AsPyList(labels), VecVecInt_AsPyList(col_cnts), VecInt_AsPyList(target_nums));
-	}
-	else if (L"str" == feaAttrib.type || L"" == feaAttrib.type)
-	{
-		vector<wstring> col = PyList_AsVecStr(colObj);
-		vector<vector<int64_t>> col_cnts;
-		vector<int64_t> target_nums;
-		vector<wstring> labels = _count_col(col_cnts, target_nums, targets, col);
-		return (PyObject*)Py_BuildValue("(O,O,O)", VecStr_AsPyList(labels), VecVecInt_AsPyList(col_cnts), VecInt_AsPyList(target_nums));
-	}
-	PyErr_SetString(PyExc_TypeError, "int or str or fload type is expected!");
+	vector<wstring> targets = PyList_AsVecStr(targetsObj);
+	vector<wstring> col = PyList_AsVecStr(colObj);
+	PyObject* target_dict;
+	PyObject* col_cnt_dict = _count_col(&target_dict, targets, col);
+	return (PyObject*)Py_BuildValue("(O,O)", col_cnt_dict, target_dict);
+	PyErr_SetString(PyExc_TypeError, "str type is expected!");
 	return NULL;
 }
 
 
-int max(vector<int64_t> lst) {
-	int max_num = INT_MIN;
-	for (int i = 0; i < lst.size(); i++) {
-		if (lst[i] > max_num) {
-			max_num = lst[i];
-		}
-	}
-	return max_num;
+int info() {
+	printf("------------------------ AUTHOR -------------------------\n");
+	printf("                      Liphone/LiFeng                     \n");
+	printf("------------------------ VERSION ------------------------\n");
+	printf("                          0.0.0                          \n");
+	printf("-------------------------- DATE -------------------------\n");
+	printf("                       2019/12/09                        \n");
+	return 1;
 }
 
-// 模块中每个可供Python调用的函数都需要一个对应的包裹函数
-static PyObject* Operator_max(PyObject* self, PyObject* args) {
-	PyObject* obj;
-	// O代表对象
-	if (!PyArg_ParseTuple(args, "O", &obj)) {
-		return NULL;
-	}
 
-	vector<int64_t> lst = PyList_AsVecInt(obj);
-	return (PyObject*)Py_BuildValue("L", max(lst));
+static PyObject* Operator_info(PyObject* self, PyObject* args) {	;
+	return (PyObject*)Py_BuildValue("L", info());
 }
 
 // 添加PyMethodDef ModuleMethods[]数组
@@ -1122,7 +1070,7 @@ static PyMethodDef OperatorMethods[] = {
 	{"col2feature",Operator_col2feature,METH_VARARGS},
 	{"format_col",Operator_format_col,METH_VARARGS},
 	{"count_col",Operator_count_col,METH_VARARGS},
-	{"max",Operator_max,METH_VARARGS},
+	{"info",Operator_info,METH_VARARGS},
 	{NULL,NULL},
 };
 
@@ -1142,7 +1090,7 @@ void PyInit_Operator() {
 #endif // !REGION
 
 /*====================================================== Operator Test Module ======================================================*/
-//#define TEST_FLAG
+#define TEST_FLAG
 #ifdef TEST_FLAG
 
 bool test_operator_col_double() {
@@ -1216,17 +1164,6 @@ bool test_col2feature() {
 }
 
 
-bool test_count_col() {
-	vector<vector<int64_t>> col_cnts;
-	vector<int64_t> target_nums;
-	vector<int64_t>targets = { 1,1,1,0,1,0,0 };
-	vector<int64_t> col = { 1,1,2,5,7,3,7 };
-	vector<int64_t> keys = _count_col(col_cnts, target_nums, targets, col);
-	printf("\ntest_count_col () test ok!\n");
-	return true;
-}
-
-
 #ifdef _MSC_VER
 #include <Windows.h>
 #endif // _MSC_VER
@@ -1237,7 +1174,6 @@ int main(int argc, char* argv[])
 	test_operator_col_double();
 	test_operator_col_string();
 	test_col2feature();
-	test_count_col();
 
 	Py_SetPythonHome(L"D:/Install/Anaconda3");
 	Py_Initialize();
@@ -1250,13 +1186,20 @@ int main(int argc, char* argv[])
 	//printf("current working directory: %s\n", curr_dir.c_str());
 	//PyObject* pModule;
 	//PyObject* py_func, *py_ret, *retObj;
-	//pModule = PyImport_ImportModule("split_chunks");
+	//pModule = PyImport_ImportModule("gen_feature_dict");
 	//py_func = PyObject_GetAttrString(pModule, "main");
+	//py_ret = PyObject_CallFunction(py_func, NULL);
+	//retObj = Operator_count_col(py_ret, py_ret);
 
 	PyObject* pModule;
 	PyObject* py_func, * py_ret, * retObj;
 	pModule = PyImport_ImportModule("operator_module_test");
 	py_func = PyObject_GetAttrString(pModule, "format_col");
+
+	py_func = PyObject_GetAttrString(pModule, "operator_col");
+	py_ret = PyObject_CallFunction(py_func, NULL);
+	retObj = Operator_operator_col(py_ret, py_ret);
+	printf("\noperator_col () test ok!\n");
 
 	py_ret = PyObject_CallFunction(py_func, NULL);
 	retObj = Operator_format_col(py_ret, py_ret);
@@ -1271,11 +1214,6 @@ int main(int argc, char* argv[])
 	py_ret = PyObject_CallFunction(py_func, NULL);
 	retObj = Operator_count_col(py_ret, py_ret);
 	printf("\ncount_col () test ok!\n");
-
-	py_func = PyObject_GetAttrString(pModule, "operator_col");
-	py_ret = PyObject_CallFunction(py_func, NULL);
-	retObj = Operator_operator_col(py_ret, py_ret);
-	printf("\noperator_col () test ok!\n");
 
 	py_func = PyObject_GetAttrString(pModule, "mix");
 	py_ret = PyObject_CallFunction(py_func, NULL);
