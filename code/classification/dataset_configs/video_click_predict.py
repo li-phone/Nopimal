@@ -77,3 +77,20 @@ style = 'darkgrid'
 
 # train settings
 work_dirs = "./work_dirs/"
+dataset_name = "video_click_predict"
+random_state = 666
+train_val_test_ratio = (0.6, 0.2, 0.2)
+train_models = [
+    dict(name='ABT', random_state=random_state, params=None),
+    dict(name='DT', random_state=random_state, params=None),
+    dict(name='GBT', random_state=random_state, params=None),
+    dict(name='KNN', random_state=random_state, params=None),
+    dict(name='LR', random_state=random_state, params=None),
+    dict(name='GNB', random_state=random_state, params=None),
+    dict(name='RF', random_state=random_state, params=None),
+    dict(name='SVM', random_state=random_state, params=None),
+    dict(name='XGB', random_state=random_state, params=None),
+    dict(name='ET', random_state=random_state, params=None),
+]
+
+

@@ -41,14 +41,18 @@ from operator_module.utils import *
 
 def draw_feature(feature_dict, img_save_dir, style='darkgrid'):
     for col_k, col_v in feature_dict.items():
-        xs = col_v['label']
-        y1 = col_v['category_rate']
-        y2 = col_v['click_probability']
-        y3 = col_v['click_rate']
+        xs = np.array(col_v['label'])
+        y1 = np.array(col_v['category_rate'])
+        y2 = np.array(col_v['click_probability'])
+        y3 = np.array(col_v['click_rate'])
 
         if len(xs) > 25:
-            print("{} unique size is {}, more than 25".format(col_k, len(xs)))
-            continue
+            y2_idx = np.argsort(-y2)
+            keep_idx = y2_idx[:24]
+            xs = xs[keep_idx]
+            y1 = y1[keep_idx]
+            y2 = y2[keep_idx]
+            y3 = y3[keep_idx]
 
         save_name = os.path.join(img_save_dir, "{}_bar.png".format(col_k))
         if os.path.exists(save_name):
@@ -68,60 +72,42 @@ def draw_feature(feature_dict, img_save_dir, style='darkgrid'):
         plt.savefig(save_name)
         plt.show()
 
-    # 绘制点击概率和点击比例, 点击概率和分布比例, 点击比例和分布比例的关系
-    for col_k, col_v in feature_dict.items():
+    # # 绘制点击概率和点击比例, 点击概率和分布比例, 点击比例和分布比例的关系
+    # for col_k, col_v in feature_dict.items():
+    #
+    #     col_df = pd.DataFrame(
+    #         data={
+    #             'label': [str(_) for _ in col_v['label']],
+    #             'click_prob': col_v['click_probability'],
+    #             'category_rate': col_v['category_rate'],
+    #             'click_rate': col_v['click_rate'],
+    #         }
+    #     )
+    #     sns.set(style=style)
+    #     # f, ax = plt.subplots(figsize=(7,7))
+    #     if len(col_v['label']) < 25:
+    #         sns.relplot(x="category_rate", y="click_rate", size="click_prob",
+    #                     # sizes=(40, 400),
+    #                     alpha=.5,
+    #                     height=7,
+    #                     data=col_df)
+    #         save_name = os.path.join(img_save_dir, "{}_scatter.png".format(col_k))
+    #         if os.path.exists(save_name):
+    #             continue
+    #         plt.savefig(save_name)
+    #         plt.show()
+    #     for x, y in zip(['category_rate', 'category_rate', 'click_rate'],
+    #                     ['click_prob', 'click_rate', 'click_prob']):
+    #         save_name = os.path.join(img_save_dir, "{}_{}_{}_joint.png".format(col_k, x, y))
+    #         if os.path.exists(save_name):
+    #             continue
+    #         sns.jointplot(x=x, y=y, data=col_df, kind="reg", stat_func=sci.pearsonr, xlim=(0, 1.0), ylim=(0, 1.0),
+    #                       height=7)
+    #         plt.savefig(save_name)
+    #         plt.show()
 
-        col_df = pd.DataFrame(
-            data={
-                'label': [str(_) for _ in col_v['label']],
-                'click_prob': col_v['click_probability'],
-                'category_rate': col_v['category_rate'],
-                'click_rate': col_v['click_rate'],
-            }
-        )
-        sns.set(style=style)
-        # f, ax = plt.subplots(figsize=(7,7))
-        if len(col_v['label']) < 25:
-            sns.relplot(x="category_rate", y="click_rate", size="click_prob",
-                        # sizes=(40, 400),
-                        alpha=.5,
-                        height=7,
-                        data=col_df)
-            save_name = os.path.join(img_save_dir, "{}_scatter.png".format(col_k))
-            if os.path.exists(save_name):
-                continue
-            plt.savefig(save_name)
-            plt.show()
-        for x, y in zip(['category_rate', 'category_rate', 'click_rate'],
-                        ['click_prob', 'click_rate', 'click_prob']):
-            save_name = os.path.join(img_save_dir, "{}_{}_{}_joint.png".format(col_k, x, y))
-            if os.path.exists(save_name):
-                continue
-            sns.jointplot(x=x, y=y, data=col_df, kind="reg", stat_func=sci.pearsonr, xlim=(0, 1.0), ylim=(0, 1.0),
-                          height=7)
-            plt.savefig(save_name)
-            plt.show()
 
-
-def main():
-    # 预先定义环境
-    dataset_cfg = import_module("cfg.py")
-    cfg = import_module(dataset_cfg.dataset_cfg_path)
-    mkdirs(cfg.feature_save_dir)
-    mkdirs(cfg.img_save_dir)
-
-    if os.path.exists(cfg.feature_dict_file):
-        feature_dict = load_dict(cfg.feature_dict_file)
-    else:
-        feature_dict = dict(
-            success=False,
-            index=-1,
-            total_num=0,
-            total_click_num=0,
-            raw_data={},
-            data={},
-        )
-
+def gen_dict(cfg, feature_dict):
     chunk_paths = glob.glob(cfg.train_chunk_path + r"train_chunk_*.h5")
     evaluations = Evaluations(["operator_df", "count_df"])
     for idx, chunk_path in tqdm(enumerate(chunk_paths)):
@@ -154,22 +140,64 @@ def main():
         feature_dict['index'] = idx
         feature_dict['total_num'] += raw_df.shape[0]
         save_dict(cfg.feature_dict_file, feature_dict)
+        save_dict(cfg.feature_dict_file + ".bak", feature_dict)
         evaluations.summary()
 
     for col_k, col_v in feature_dict['raw_data'].items():
-        xs = [k for k, v in col_v.items()]
-        y1 = [float(v['category_num'] / max(feature_dict['total_num'], 1.)) for k, v in col_v.items()]
-        y2 = [float(v['label_num'][1] / max(v['category_num'], 1.)) for k, v in col_v.items()]
-        y3 = [float(v['label_num'][1] / max(feature_dict['total_click_num'], 1.)) for k, v in col_v.items()]
-        feature_dict['data'][col_k] = dict(
-            label=xs,
-            category_rate=y1,
-            click_probability=y2,
-            click_rate=y3,
-        )
+        # print('key', col_k)
+        labels = [k for k, v in col_v.items()]
+        labels = np.sort(labels)
+        sum_0, sum_1 = 0, 0
+        for label in labels:
+            if '0' in col_v[label]:
+                sum_0 += col_v[label]['0']
+            if '1' in col_v[label]:
+                sum_1 += col_v[label]['1']
+        # assert sum_0 + sum_1 == feature_dict['total_num']
+        category_rates, click_probabilities, click_rates = [], [], []
+        for label in labels:
+            num_0, num_1 = 0, 0
+            if '0' in col_v[label]:
+                num_0 = col_v[label]['0']
+            if '1' in col_v[label]:
+                num_1 = col_v[label]['1']
+            num = max(num_0 + num_1, 1)
+            click_probabilities.append(num_1 / num)
+            click_rates.append(num_1 / max(sum_1, 1))
+            category_rates.append(num / max(sum_0 + sum_1, 1))
 
+        feature_dict['data'][col_k] = dict(
+            label=labels,
+            category_rate=category_rates,
+            click_probability=click_probabilities,
+            click_rate=click_rates,
+        )
     feature_dict['success'] = True
     save_dict(cfg.feature_dict_file, feature_dict)
+    return feature_dict
+
+
+def main():
+    # 预先定义环境
+    dataset_cfg = import_module("cfg.py")
+    cfg = import_module(dataset_cfg.dataset_cfg_path)
+    mkdirs(cfg.feature_save_dir)
+    mkdirs(cfg.img_save_dir)
+
+    if os.path.exists(cfg.feature_dict_file):
+        feature_dict = load_dict(cfg.feature_dict_file)
+    else:
+        feature_dict = dict(
+            success=False,
+            index=-1,
+            total_num=0,
+            total_click_num=0,
+            raw_data={},
+            data={},
+        )
+
+    if feature_dict['success'] is not True:
+        feature_dict = gen_dict(cfg, feature_dict)
 
     # 绘制分布直方图, 点击概率直方图, 点击比例直方图
     if cfg.draw_feature:

@@ -39,8 +39,7 @@ from utils import *
 
 
 
-def _raw2feature(raw_np, np.ndarray[np.str] keep_names, dict feature_dict, str label,
-                  np.ndarray[np.str] feature_keys):
+def _raw2feature():
     results = []
     for raw_r in raw_np:
         rst_r = {keep_names[0]: raw_r[0]}
@@ -61,26 +60,7 @@ def _raw2feature(raw_np, np.ndarray[np.str] keep_names, dict feature_dict, str l
     columns = [k for k, v in results[0].items()]
     return results_np, columns
 
-
-def _split_groups(col, int group_dist=-1, c_idx=None):
-    if group_dist <= 0:
-        return col
-    if c_idx is None:
-        #     千万级别以上数据量计算速度慢, 共用索引是为了加速计算
-        c_idx = [True if is_nan(_) else False for _ in col]
-    assert c_idx is not None
-
-    col_not_nan = [x for i, x in enumerate(col) if not c_idx[i]]
-    if len(col_not_nan) == 0:
-        return col
-
-    # 如果为0
-    grp_dist = sys.float_info.max if group_dist == 0 else group_dist
-    col = [x if c_idx[i] else int(x // grp_dist) for i, x in enumerate(col)]
-    return col
-
-
-def _save_feature_df(raw_df, keep_names, save_name, feature_dict):
+def save_feature_df(raw_df, save_name, feature_dict):
     results = []
     for i in range(raw_df.shape[0]):
         raw_r = raw_df.iloc[i]
@@ -113,12 +93,13 @@ def _save_feature_df(raw_df, keep_names, save_name, feature_dict):
 def gen_feature(chunk_paths, raw_file, other_files, feature_dict, save_dir, mode='train'):
     for idx, chunk_path in tqdm(enumerate(chunk_paths)):
         save_name = os.path.join(save_dir, "{}_feature_chunk_{:06d}.h5".format(mode, idx))
-        # if os.path.exists(save_name):
-        #     continue
+        if os.path.exists(save_name):
+            continue
 
-        features_names = raw_file['features_names']
+        features_names = raw_file['features_names'].copy()
         for other_file in other_files:
             features_names.extend(other_file['features_names'])
+
         operator_path = os.path.join(save_dir, "{}_operator_chunk_{:06d}.h5".format(mode, idx))
         if os.path.exists(operator_path):
             hfs = pd.HDFStore(operator_path)
@@ -126,12 +107,13 @@ def gen_feature(chunk_paths, raw_file, other_files, feature_dict, save_dir, mode
             hfs.close()
         else:
             hfs = pd.HDFStore(chunk_path)
-            raw_df, raw_idx_df = hfs['raw_df'].head(2000), hfs['raw_idx_df'].head(2000)
+            raw_df, raw_idx_df = hfs['raw_df']
             hfs.close()
-            raw_df, features_names, raw_idx_df = operator(raw_df, features_names, raw_idx_df)
-        keep_names = [r['name'] for r in features_names if 'operator' not in r or r['operator'] == 'group']
-        raw_df = raw_df[keep_names]
-        save_feature_df(raw_df, keep_names, save_name, feature_dict)
+            raw_df, features_names = operator_df(raw_df, features_names)
+            keep_names = [r['name'] for r in features_names]
+            raw_df = raw_df[keep_names]
+
+        save_feature_df(raw_df, save_name, feature_dict)
 
 def main():
     # 预先定义环境
@@ -139,8 +121,7 @@ def main():
     cfg = import_module(dataset_cfg.dataset_cfg_path)
     mkdirs(cfg.feature_save_dir)
 
-    # feature_dict = load_dict(cfg.feature_dict_file)
-    feature_dict = load_dict("feature_dict_debug.json")
+    feature_dict = load_dict(cfg.feature_dict_file)
     train_chunk_paths = glob.glob(cfg.train_chunk_path + r"train_chunk_*.h5")
     test_chunk_paths = glob.glob(cfg.test_chunk_path + r"test_chunk_*.h5")
 
