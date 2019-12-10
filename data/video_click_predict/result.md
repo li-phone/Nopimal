@@ -40,5 +40,19 @@ evaluation: f1 score
     4	GNB	0.615041284	0.62076496
 
 
+
+    balance: True
+    normalization: global
+    
+	index   name	valA            valB
+    5	RF	0.717117261	0.764369475
+    3	LR	0.720804148	0.751794981
+    2	GBT	0.708466198	0.746610202
+    6	XGB	0.707568378	0.745003879
+    0	ABT	0.70071987	0.737956505
+    1	DT	0.67725012	0.726123673
+    7	ET	0.67932611	0.712869278
+    4	GNB	0.616158589	0.621908086
+
 #### Summary
 From the above result, we can see that these are not good.
