@@ -33,21 +33,6 @@ from line_profiler import LineProfiler
 from .utils import *
 
 
-def col2feature(col, index, fea_attrib, labels, fea_names, fea_values):
-    features = [[0] * len(fea_names) for i in range(len(fea_names))]
-    fea_attribs = [dict(name=fea_attrib['name'] + "_" + x) for x in fea_names]
-    for i, label in enumerate(col):
-        idx = labels.index(label)
-        if -1 != idx:
-            for j, _ in enumerate(fea_names):
-                features[j][i] = fea_values[j][i]
-        else:
-            index[i] = True
-            print('Warning!!! No such "{}" label'.format(label))
-
-    return features, fea_attribs
-
-
 # ----------------------------------------- Split Chunks Data Frame API -----------------------------------------
 # 数据初步处理，做单位转换，大小写消歧等处理
 def format_col(col, r):
@@ -135,7 +120,7 @@ def operator_col(col, fea_attrib):
                 col = [x if x != x else x.split(split) for x in col]
                 tags = col
 
-        fea_attribs.append(dict(name=fea_attrib['name'] + "_tags", command="split"))
+        fea_attribs.append(dict(name=fea_attrib['name'] + "_tags", command="split", map=True))
         out_features.append(tags)
 
         g = fea_attrib['group_dists']
@@ -214,12 +199,13 @@ def count_df(raw_df, feature_names, feature_dict):
     targets = [str(x) for x in targets]
     for i in range(1, len(feature_names)):
         r = feature_names[i]
-        if r['name'] not in feature_dict:
-            feature_dict[r['name']] = dict()
-        col = list(raw_df[r['name']])
-        col = [x if isinstance(x, list) else [x] for x in col]
-        col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
+        if 'map' in r and r['map'] is True:
+            if r['name'] not in feature_dict:
+                feature_dict[r['name']] = dict()
+            col = list(raw_df[r['name']])
+            col = [x if isinstance(x, list) else [x] for x in col]
+            col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
 
-        feature_dict[r['name']] = count_col(targets, col, feature_dict[r['name']])
+            feature_dict[r['name']] = count_col(targets, col, feature_dict[r['name']])
 
     return feature_dict

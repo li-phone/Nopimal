@@ -25,12 +25,14 @@ import os
 from tqdm import tqdm
 from sklearn.externals import joblib
 from sklearn.metrics import classification_report
+from sklearn.utils import shuffle
 from operator_module.utils import *
 
 
-def norm_df(x):
-    train_stats = x.describe()
-    train_stats = train_stats.transpose()
+def norm_df(x, train_stats=None):
+    if train_stats is None:
+        train_stats = x.describe()
+        train_stats = train_stats.transpose()
     return (x - train_stats['mean']) / train_stats['std']
 
 
@@ -84,13 +86,21 @@ def evaluate(model, x, y_true, target_names=None, output_dict=False):
 def chunk2df(chunk_path, mode):
     dataset_df = pd.DataFrame()
     for m in mode:
-        chunk_paths = glob.glob(os.path.join(chunk_path, r"{}_feature_*.h5".format(m)))
-        for idx, chunk_path in tqdm(enumerate(chunk_paths)):
+        mode_dir = os.path.join(chunk_path, m)
+        chunk_paths = glob.glob(os.path.join(mode_dir, r"{}_feature_chunk_*.h5".format(m)))
+        for idx, chunk_path in enumerate(chunk_paths):
             hfs = pd.HDFStore(chunk_path)
             feature_df = hfs['feature_df']
             hfs.close()
             dataset_df = pd.concat([dataset_df, feature_df])
     return dataset_df
+
+
+def get_train_stats(split_chunk_path, mode):
+    x = chunk2df(split_chunk_path, mode=mode)
+    train_stats = x.describe()
+    train_stats = train_stats.transpose()
+    return train_stats
 
 
 def main():
@@ -100,9 +110,26 @@ def main():
     save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name)
     mkdirs(save_dir)
 
+    normal_stats = None
+    if cfg.normal_data:
+        normal_mode = cfg.train_mode
+        normal_mode.extend(cfg.val_mode)
+        normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
     train_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.train_mode)
-    train_labels = train_dataset.pop('target')
-    normed_train_data = norm_df(train_dataset)
+    if cfg.balanced_data:
+        train_1 = train_dataset[train_dataset[cfg.target_name] == 1]
+        train_0 = train_dataset.drop(train_1.index)
+        rate = train_0.shape[0] / train_1.shape[0]
+        if rate > 1:
+            train_0 = train_0.sample(train_1.shape[0])
+        elif rate < 1:
+            train_1 = train_1.sample(train_0.shape[0])
+        train_dataset = pd.concat([train_0, train_1])
+        train_dataset = shuffle(train_dataset)
+
+    train_labels = train_dataset.pop(cfg.target_name)
+    normed_train_data = norm_df(train_dataset, normal_stats)
+    normed_train_data = normed_train_data.fillna(0)
 
     log_df = []
     for train_model in tqdm(cfg.train_models):
@@ -112,15 +139,18 @@ def main():
         rpt_row = [train_model['name']]
         for mode in cfg.val_mode:
             val_dataset = chunk2df(cfg.split_chunk_path, mode=[mode])
-            val_labels = val_dataset.pop('target')
-            normed_val_data = norm_df(val_dataset)
+            val_labels = val_dataset.pop(cfg.target_name)
+            normed_val_data = norm_df(val_dataset, normal_stats)
+            normed_val_data = normed_val_data.fillna(0)
             print('\t{}:\n'.format(mode))
             rpt = evaluate(model, normed_val_data, val_labels, output_dict=True)
             print(evaluate(model, normed_val_data, val_labels, output_dict=False))
-            rpt_row.extend(rpt['avg'])
-            log_df.append(np.array(rpt_row))
-    log_df = pd.DataFrame(data=log_df, columns=['name'].extend(cfg.val_mode))
-    log_df.to_csv(os.path.join(save_dir, 'train_log.csv'))
+            rpt_row.extend([rpt['macro avg']['f1-score']])
+        log_df.append(np.array(rpt_row))
+    header = ['name']
+    header.extend(cfg.val_mode)
+    log_df = pd.DataFrame(data=np.array(log_df), columns=header)
+    log_df.to_csv(os.path.join(save_dir, 'train_log.csv'), header=True)
     print('train successfully!')
 
 

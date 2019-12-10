@@ -13,14 +13,14 @@ raw_train_file = dict(
     chunk_size=200000,
     features_names=[
         dict(name='target', type='int'),  # default str
-        dict(name='pos', type='int'),
-        dict(name='deviceid'),
-        dict(name='app_version'),
-        dict(name='newsid', type='int'),
-        dict(name='device_vendor', type='str', transform='lower'),
-        dict(name='netmodel', type='str', transform='lower'),
-        dict(name='osversion', type='str', transform='lower'),
-        dict(name='device_version', type='str', transform='lower'),
+        dict(name='pos', type='int', map=True),
+        dict(name='deviceid', map=True),
+        dict(name='app_version', map=True),
+        dict(name='newsid', type='int', map=True),
+        dict(name='device_vendor', type='str', transform='lower', map=True),
+        dict(name='netmodel', type='str', transform='lower', map=True),
+        dict(name='osversion', type='str', transform='lower', map=True),
+        dict(name='device_version', type='str', transform='lower', map=True),
         dict(name='lng', type='float', command='group', group_dists=(5,)),
         dict(name='lat', type='float', command='group', group_dists=(5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
@@ -35,13 +35,13 @@ raw_test_file = dict(
     chunk_size=200000,
     features_names=[
         dict(name='pos', type='int'),
-        dict(name='deviceid'),
-        dict(name='app_version'),
-        dict(name='newsid', type='int'),
-        dict(name='device_vendor', type='str', transform='lower'),
-        dict(name='netmodel', type='str', transform='lower'),
-        dict(name='osversion', type='str', transform='lower'),
-        dict(name='device_version', type='str', transform='lower'),
+        dict(name='deviceid', map=True),
+        dict(name='app_version', map=True),
+        dict(name='newsid', type='int', map=True),
+        dict(name='device_vendor', type='str', transform='lower', map=True),
+        dict(name='netmodel', type='str', transform='lower', map=True),
+        dict(name='osversion', type='str', transform='lower', map=True),
+        dict(name='device_version', type='str', transform='lower', map=True),
         dict(name='lng', type='float', command='group', group_dists=(5,)),
         dict(name='lat', type='float', command='group', group_dists=(5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
@@ -68,8 +68,8 @@ other_train_files = [
                  group_dists=(1, 1, 0.5, 1, 1), splits=('|', ':'), ),
             dict(name='tag', command='split', operators=('len', 'sum', 'mean', 'min', 'max',),
                  group_dists=(2, 10, 2, 1, 10), splits=('|', ':'), ),
-            dict(name='personidentification'),
-            dict(name='gender'),
+            dict(name='personidentification', map=True),
+            dict(name='gender', map=True),
             dict(name='level', type='float', command='group', group_dists=(2,)),
             dict(name='followscore', type='float', command='group', group_dists=(1,)),
             dict(name='personalscore', type='float', command='group', group_dists=(1,)),
@@ -79,6 +79,7 @@ other_train_files = [
 
 # features settings
 feature_mode = ['train']
+target_name = 'target'
 feature_dict_file = feature_save_dir + "feature_dict_train.json"
 draw_feature = True
 style = 'darkgrid'
@@ -86,6 +87,8 @@ style = 'darkgrid'
 # train settings
 work_dirs = "./work_dirs/"
 dataset_name = "video_click_predict"
+balanced_data = False
+normal_data = False
 random_state = 666
 train_mode = ['train']
 val_mode = ['valA', 'valB']

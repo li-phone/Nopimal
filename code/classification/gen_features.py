@@ -38,20 +38,24 @@ from operator_module.utils import *
 from operator_module.py_operator import *
 
 
-def raw2feature_df(raw_df, feature_dict):
-    feature_names = list(raw_df.columns)
+def raw2feature_df(raw_df, feature_names, feature_dict):
     for i in range(1, len(feature_names)):
-        name = feature_names[i]
+        r = feature_names[i]
+        name = r['name']
         col = list(raw_df[name])
-        col = [x if isinstance(x, list) else [x] for x in col]
-        col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
-        for j, x in enumerate(col):
-            p = 0
-            for y in x:
-                if y in feature_dict[name]:
-                    p += feature_dict[name][y]['p']
-            col[j] = p
-        raw_df[name] = col
+        if 'map' in r and r['map'] is True:
+            col = [x if isinstance(x, list) else [x] for x in col]
+            col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
+            for j, x in enumerate(col):
+                p = 0
+                for y in x:
+                    if y in feature_dict[name]:
+                        p += feature_dict[name][y]['p']
+                col[j] = p
+            raw_df[name] = col
+        else:
+            col = [0 if x != x else x for x in col]
+            raw_df[name] = col
 
     return raw_df
 
@@ -75,6 +79,7 @@ def gen_feature(raw_file, other_files, feature_dict, split_chunk_path):
                 hfs = pd.HDFStore(operator_path)
                 raw_df = hfs['operator_df']
                 hfs.close()
+                features_names = feature_dict['features_names']
             else:
                 hfs = pd.HDFStore(chunk_path)
                 raw_df = hfs['raw_df']
@@ -83,7 +88,7 @@ def gen_feature(raw_file, other_files, feature_dict, split_chunk_path):
                 keep_names = [r['name'] for r in features_names]
                 raw_df = raw_df[keep_names]
 
-            raw_df = raw2feature_df(raw_df, feature_dict['raw_data'])
+            raw_df = raw2feature_df(raw_df, features_names, feature_dict['raw_data'])
             hfs = pd.HDFStore(save_name, complevel=6)
             hfs['feature_df'] = raw_df  # write to HDF5
             hfs.close()

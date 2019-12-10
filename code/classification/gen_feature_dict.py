@@ -87,7 +87,7 @@ def draw_feature(feature_dict, img_save_dir, style='darkgrid'):
             y2 = y2[keep_idx]
             y3 = y3[keep_idx]
 
-        save_name = os.path.join(img_save_dir, "{}_bar.png".format(col_k))
+        save_name = os.path.join(img_save_dir, "{}_bar.jpg".format(col_k))
         if os.path.exists(save_name):
             continue
 
@@ -175,6 +175,7 @@ def gen_dict(cfg, feature_dict):
             feature_dict['raw_data'] = count_df(raw_df, features_names, feature_dict['raw_data'])
             evaluations.update("count_df", time.time() - stime)
 
+            feature_dict['features_names'] = features_names
             feature_dict[mode]['index'] = idx
             feature_dict['total_num'] += raw_df.shape[0]
             save_dict(cfg.feature_dict_file, feature_dict)
