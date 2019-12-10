@@ -29,6 +29,7 @@ import math
 import sys
 import pandas as pd
 import datetime
+import time
 
 
 def import_module(path):
@@ -61,7 +62,8 @@ class NpEncoder(json.JSONEncoder):
 def save_dict(fname, d):
     # 持久化写入
     with open(fname, "w") as fp:
-        json.dump(d, fp, cls=NpEncoder, indent=1, separators=(',', ': '))
+        # json.dump(d, fp, cls=NpEncoder, indent=1, separators=(',', ': '))
+        json.dump(d, fp, cls=NpEncoder)
 
 
 def load_dict(fname):
@@ -124,3 +126,8 @@ class Evaluations:
         for k, v in self.evaluates.items():
             c += "{:.3f}s({:.3f}s)\t".format(v['val'], v['avg'])
         print(c)
+
+
+def get_date_str():
+    time_str = time.strftime("%Y-%m-%d_%H%M%S", time.localtime())
+    return time_str

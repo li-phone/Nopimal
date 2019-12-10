@@ -1,13 +1,15 @@
 # global settings
 data_root = "../../data/video_click_predict/"
-feature_save_dir = data_root + "/features/"
-img_save_dir = data_root + "/imgs/"
+feature_save_dir = data_root + "features/"
+img_save_dir = data_root + "imgs/"
 
-# chunk settings
-train_chunk_path = data_root + 'chunk/train/'
-test_chunk_path = data_root + 'chunk/test/'
+# split chunk settings
+split_chunk_path = data_root + 'chunk/'
 raw_train_file = dict(
     file_path=data_root + 'raw_data/train.csv',
+    size=11376681,
+    split_mode=['train', 'valA', 'valB'],
+    split_ratio=[0.6, 0.2, 0.2],
     chunk_size=200000,
     features_names=[
         dict(name='target', type='int'),  # default str
@@ -27,6 +29,9 @@ raw_train_file = dict(
 )
 raw_test_file = dict(
     file_path=data_root + 'raw_data/test.csv',
+    size=3653592,
+    split_mode=['test'],
+    split_ratio=[1.0],
     chunk_size=200000,
     features_names=[
         dict(name='pos', type='int'),
@@ -73,7 +78,8 @@ other_train_files = [
 ]
 
 # features settings
-feature_dict_file = feature_save_dir + "feature_dict.json"
+feature_mode = ['train']
+feature_dict_file = feature_save_dir + "feature_dict_train.json"
 draw_feature = True
 style = 'darkgrid'
 
@@ -81,7 +87,8 @@ style = 'darkgrid'
 work_dirs = "./work_dirs/"
 dataset_name = "video_click_predict"
 random_state = 666
-train_val_test_ratio = (0.6, 0.2, 0.2)
+train_mode = ['train']
+val_mode = ['valA', 'valB']
 train_models = [
     dict(name='ABT', random_state=random_state, params=None),
     dict(name='DT', random_state=random_state, params=None),
@@ -94,5 +101,3 @@ train_models = [
     dict(name='XGB', random_state=random_state, params=None),
     dict(name='ET', random_state=random_state, params=None),
 ]
-
-

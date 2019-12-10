@@ -74,50 +74,54 @@ def train(x, y, name, save_name=None, random_state=None):
     return model
 
 
-def evaluate(model, x, y_true, target_names=None):
+def evaluate(model, x, y_true, target_names=None, output_dict=False):
     y_pred = model.predict(x)
     target_names = target_names
-    rpt = classification_report(y_true, y_pred, target_names=target_names, output_dict=False)
+    rpt = classification_report(y_true, y_pred, target_names=target_names, output_dict=output_dict)
     return rpt
+
+
+def chunk2df(chunk_path, mode):
+    dataset_df = pd.DataFrame()
+    for m in mode:
+        chunk_paths = glob.glob(os.path.join(chunk_path, r"{}_feature_*.h5".format(m)))
+        for idx, chunk_path in tqdm(enumerate(chunk_paths)):
+            hfs = pd.HDFStore(chunk_path)
+            feature_df = hfs['feature_df']
+            hfs.close()
+            dataset_df = pd.concat([dataset_df, feature_df])
+    return dataset_df
 
 
 def main():
     # 预先定义环境
     dataset_cfg = import_module("cfg.py")
     cfg = import_module(dataset_cfg.dataset_cfg_path)
-    mkdirs(os.path.join(cfg.work_dirs, cfg.dataset_name))
+    save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name)
+    mkdirs(save_dir)
 
-    dataset_df = pd.DataFrame()
-    chunk_paths = glob.glob(cfg.train_chunk_path + r"train_feature_*.h5")
-    for idx, chunk_path in tqdm(enumerate(chunk_paths)):
-        hfs = pd.HDFStore(chunk_path)
-        feature_df = hfs['feature_df']
-        hfs.close()
-        dataset_df = pd.concat([dataset_df, feature_df])
-
-    train_ratio = cfg.train_val_test_ratio[0] / np.sum(cfg.train_val_test_ratio)
-    train_dataset = dataset_df.sample(frac=train_ratio, random_state=cfg.random_state)
-    val_test_dataset = dataset_df.drop(train_dataset.index)
-
-    val_ratio = cfg.train_val_test_ratio[1] / np.sum(cfg.train_val_test_ratio[1:])
-    val_dataset = val_test_dataset.sample(frac=val_ratio, random_state=cfg.random_state)
-    test_dataset = val_test_dataset.drop(val_dataset.index)
-
+    train_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.train_mode)
     train_labels = train_dataset.pop('target')
-    val_labels = val_dataset.pop('target')
-    test_labels = test_dataset.pop('target')
-
     normed_train_data = norm_df(train_dataset)
-    normed_val_data = norm_df(val_dataset)
-    normed_test_data = norm_df(test_dataset)
 
+    log_df = []
     for train_model in tqdm(cfg.train_models):
-        save_name = os.path.join(cfg.work_dirs, cfg.dataset_name, "{}.m".format(train_model['name']))
+        save_name = os.path.join(save_dir, "{}.m".format(train_model['name']))
         model = train(normed_train_data, train_labels, train_model['name'], save_name, train_model['random_state'])
-        print('\n\n' + '=' * 32 + " val " + train_model['name'] + '=' * 32)
-        print(evaluate(model, normed_val_data, val_labels))
-        print('\n\n' + '=' * 32 + " test " + train_model['name'] + '=' * 32)
-        print(evaluate(model, normed_test_data, test_labels))
+        print('\n\n{} {} {}'.format('=' * 36, train_model['name'], '=' * 36))
+        rpt_row = [train_model['name']]
+        for mode in cfg.val_mode:
+            val_dataset = chunk2df(cfg.split_chunk_path, mode=[mode])
+            val_labels = val_dataset.pop('target')
+            normed_val_data = norm_df(val_dataset)
+            print('\t{}:\n'.format(mode))
+            rpt = evaluate(model, normed_val_data, val_labels, output_dict=True)
+            print(evaluate(model, normed_val_data, val_labels, output_dict=False))
+            rpt_row.extend(rpt['avg'])
+            log_df.append(np.array(rpt_row))
+    log_df = pd.DataFrame(data=log_df, columns=['name'].extend(cfg.val_mode))
+    log_df.to_csv(os.path.join(save_dir, 'train_log.csv'))
+    print('train successfully!')
 
 
 if __name__ == "__main__":

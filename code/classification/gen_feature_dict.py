@@ -39,6 +39,39 @@ from operator_module.py_operator import *
 from operator_module.utils import *
 
 
+def get_draw_dict(feature_dict):
+    for col_k, col_v in feature_dict['raw_data'].items():
+        # print('key', col_k)
+        labels = [k for k, v in col_v.items()]
+        labels = np.sort(labels)
+        sum_0, sum_1 = 0, 0
+        for label in labels:
+            if '0' in col_v[label]:
+                sum_0 += col_v[label]['0']
+            if '1' in col_v[label]:
+                sum_1 += col_v[label]['1']
+        # assert sum_0 + sum_1 == feature_dict['total_num']
+        category_rates, click_probabilities, click_rates = [], [], []
+        for label in labels:
+            num_0, num_1 = 0, 0
+            if '0' in col_v[label]:
+                num_0 = col_v[label]['0']
+            if '1' in col_v[label]:
+                num_1 = col_v[label]['1']
+            num = max(num_0 + num_1, 1)
+            click_probabilities.append(num_1 / num)
+            click_rates.append(num_1 / max(sum_1, 1))
+            category_rates.append(num / max(sum_0 + sum_1, 1))
+
+        feature_dict['data'][col_k] = dict(
+            label=labels,
+            category_rate=category_rates,
+            click_probability=click_probabilities,
+            click_rate=click_rates,
+        )
+    return feature_dict
+
+
 def draw_feature(feature_dict, img_save_dir, style='darkgrid'):
     for col_k, col_v in feature_dict.items():
         xs = np.array(col_v['label'])
@@ -108,72 +141,46 @@ def draw_feature(feature_dict, img_save_dir, style='darkgrid'):
 
 
 def gen_dict(cfg, feature_dict):
-    chunk_paths = glob.glob(cfg.train_chunk_path + r"train_chunk_*.h5")
-    evaluations = Evaluations(["operator_df", "count_df"])
-    for idx, chunk_path in tqdm(enumerate(chunk_paths)):
-        if idx <= feature_dict['index']:
-            continue
-        features_names = cfg.raw_train_file['features_names'].copy()
-        for other_file in cfg.other_train_files:
-            features_names.extend(other_file['features_names'])
+    for mode in cfg.feature_mode:
+        mode_dir = os.path.join(cfg.split_chunk_path, mode)
+        chunk_paths = glob.glob(os.path.join(mode_dir, r"{}_chunk_*.h5".format(mode)))
+        evaluations = Evaluations(["operator_df", "count_df"])
+        if mode not in feature_dict:
+            feature_dict[mode] = dict(index=-1)
 
-        hfs = pd.HDFStore(chunk_path)
-        raw_df = hfs['raw_df']
-        hfs.close()
+        for idx, chunk_path in tqdm(enumerate(chunk_paths)):
+            if idx <= feature_dict[mode]['index']:
+                continue
+            features_names = cfg.raw_train_file['features_names'].copy()
+            for other_file in cfg.other_train_files:
+                features_names.extend(other_file['features_names'])
 
-        stime = time.time()
-        raw_df, features_names = operator_df(raw_df, features_names)
-        evaluations.update("operator_df", time.time() - stime)
-
-        save_name = os.path.join(cfg.train_chunk_path, "{}_operator_chunk_{:06d}.h5".format('train', idx))
-        keep_names = [r['name'] for r in features_names]
-        raw_df = raw_df[keep_names]
-        if not os.path.exists(save_name):
-            hfs = pd.HDFStore(save_name, complevel=6)
-            hfs['operator_df'] = raw_df  # write to HDF5
+            hfs = pd.HDFStore(chunk_path)
+            raw_df = hfs['raw_df']
             hfs.close()
 
-        stime = time.time()
-        feature_dict['raw_data'] = count_df(raw_df, features_names, feature_dict['raw_data'])
-        evaluations.update("count_df", time.time() - stime)
+            stime = time.time()
+            raw_df, features_names = operator_df(raw_df, features_names)
+            evaluations.update("operator_df", time.time() - stime)
 
-        feature_dict['index'] = idx
-        feature_dict['total_num'] += raw_df.shape[0]
-        save_dict(cfg.feature_dict_file, feature_dict)
-        save_dict(cfg.feature_dict_file + ".bak", feature_dict)
-        evaluations.summary()
+            save_name = os.path.join(mode_dir, "{}_operator_chunk_{:06d}.h5".format(mode, idx))
+            keep_names = [r['name'] for r in features_names]
+            raw_df = raw_df[keep_names]
+            if not os.path.exists(save_name):
+                hfs = pd.HDFStore(save_name, complevel=6)
+                hfs['operator_df'] = raw_df  # write to HDF5
+                hfs.close()
 
-    for col_k, col_v in feature_dict['raw_data'].items():
-        # print('key', col_k)
-        labels = [k for k, v in col_v.items()]
-        labels = np.sort(labels)
-        sum_0, sum_1 = 0, 0
-        for label in labels:
-            if '0' in col_v[label]:
-                sum_0 += col_v[label]['0']
-            if '1' in col_v[label]:
-                sum_1 += col_v[label]['1']
-        # assert sum_0 + sum_1 == feature_dict['total_num']
-        category_rates, click_probabilities, click_rates = [], [], []
-        for label in labels:
-            num_0, num_1 = 0, 0
-            if '0' in col_v[label]:
-                num_0 = col_v[label]['0']
-            if '1' in col_v[label]:
-                num_1 = col_v[label]['1']
-            num = max(num_0 + num_1, 1)
-            click_probabilities.append(num_1 / num)
-            click_rates.append(num_1 / max(sum_1, 1))
-            category_rates.append(num / max(sum_0 + sum_1, 1))
+            stime = time.time()
+            feature_dict['raw_data'] = count_df(raw_df, features_names, feature_dict['raw_data'])
+            evaluations.update("count_df", time.time() - stime)
 
-        feature_dict['data'][col_k] = dict(
-            label=labels,
-            category_rate=category_rates,
-            click_probability=click_probabilities,
-            click_rate=click_rates,
-        )
-    feature_dict['success'] = True
-    save_dict(cfg.feature_dict_file, feature_dict)
+            feature_dict[mode]['index'] = idx
+            feature_dict['total_num'] += raw_df.shape[0]
+            save_dict(cfg.feature_dict_file, feature_dict)
+            save_dict(cfg.feature_dict_file + ".bak", feature_dict)
+            evaluations.summary()
+
     return feature_dict
 
 
@@ -189,19 +196,20 @@ def main():
     else:
         feature_dict = dict(
             success=False,
-            index=-1,
             total_num=0,
-            total_click_num=0,
             raw_data={},
             data={},
         )
 
     if feature_dict['success'] is not True:
         feature_dict = gen_dict(cfg, feature_dict)
+        feature_dict['success'] = True
+        save_dict(cfg.feature_dict_file, feature_dict)
 
     # 绘制分布直方图, 点击概率直方图, 点击比例直方图
     if cfg.draw_feature:
-        draw_feature(feature_dict['data'], cfg.img_save_dir, cfg.style)
+        d = get_draw_dict(feature_dict)
+        draw_feature(d['data'], cfg.img_save_dir, cfg.style)
 
     print('generate feature dictionary successfully!')
 
