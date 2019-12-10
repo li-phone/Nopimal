@@ -15,5 +15,6 @@ data/*/raw_data
 *.pkl
 *.pkl.json
 *.log.json
+*.csv
 
 # custom
