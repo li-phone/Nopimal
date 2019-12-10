@@ -87,8 +87,8 @@ style = 'darkgrid'
 # train settings
 work_dirs = "./work_dirs/"
 dataset_name = "video_click_predict"
-balanced_data = False
-normal_data = False
+balanced_data = True
+normalization = 'none' # global, local, none
 random_state = 666
 train_mode = ['train']
 val_mode = ['valA', 'valB']

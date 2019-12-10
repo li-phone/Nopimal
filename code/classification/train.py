@@ -110,11 +110,6 @@ def main():
     save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name)
     mkdirs(save_dir)
 
-    normal_stats = None
-    if cfg.normal_data:
-        normal_mode = cfg.train_mode
-        normal_mode.extend(cfg.val_mode)
-        normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
     train_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.train_mode)
     if cfg.balanced_data:
         train_1 = train_dataset[train_dataset[cfg.target_name] == 1]
@@ -128,8 +123,20 @@ def main():
         train_dataset = shuffle(train_dataset)
 
     train_labels = train_dataset.pop(cfg.target_name)
-    normed_train_data = norm_df(train_dataset, normal_stats)
-    normed_train_data = normed_train_data.fillna(0)
+
+    normal_stats = None
+    if cfg.normalization == 'none':
+        normed_train_data = train_dataset
+        normed_train_data = normed_train_data.fillna(0)
+    else:
+        if cfg.normalization == 'global':
+            normal_mode = cfg.train_mode
+            normal_mode.extend(cfg.val_mode)
+            normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
+        elif cfg.normalization == 'local':
+            normal_stats = None
+        normed_train_data = norm_df(train_dataset, normal_stats)
+        normed_train_data = normed_train_data.fillna(0)
 
     log_df = []
     for train_model in tqdm(cfg.train_models):
@@ -140,8 +147,13 @@ def main():
         for mode in cfg.val_mode:
             val_dataset = chunk2df(cfg.split_chunk_path, mode=[mode])
             val_labels = val_dataset.pop(cfg.target_name)
-            normed_val_data = norm_df(val_dataset, normal_stats)
-            normed_val_data = normed_val_data.fillna(0)
+            if cfg.normalization == 'none':
+                normed_val_data = val_dataset
+                normed_val_data = normed_val_data.fillna(0)
+            else:
+                normed_val_data = norm_df(val_dataset, normal_stats)
+                normed_val_data = normed_val_data.fillna(0)
+
             print('\t{}:\n'.format(mode))
             rpt = evaluate(model, normed_val_data, val_labels, output_dict=True)
             print(evaluate(model, normed_val_data, val_labels, output_dict=False))
