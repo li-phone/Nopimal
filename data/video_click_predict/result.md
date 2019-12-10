@@ -42,7 +42,7 @@ evaluation: f1 score
 
 
     balance: True
-    normalization: global
+    normalization: none
     
 	index   name	valA            valB
     5	RF	0.717117261	0.764369475
