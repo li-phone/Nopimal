@@ -34,63 +34,37 @@ import json
 from numba import jit
 import sys
 import glob
-from cutils import *
-from utils import *
+from operator_module.utils import *
+from operator_module.py_operator import *
 
 
+def raw2feature_df(raw_df, feature_dict):
+    feature_names = list(raw_df.columns)
+    for i in range(1, len(feature_names)):
+        name = feature_names[i]
+        col = list(raw_df[name])
+        col = [x if isinstance(x, list) else [x] for x in col]
+        col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
+        for j, x in enumerate(col):
+            p = 0
+            for y in x:
+                p += feature_dict[name][y]['p']
+            col[j] = p
+        raw_df[name] = col
 
-def _raw2feature():
-    results = []
-    for raw_r in raw_np:
-        rst_r = {keep_names[0]: raw_r[0]}
-
-        for j in xrange(1, keep_names.shape[0]):
-            keep_name = keep_names[j]
-            label = str(raw_r[j])
-            if _is_nan(label):
-                label = str(label).lower()
-            f = feature_dict[keep_name]
-            dict_idx = f[label].index(label)
-            for k in feature_keys:
-                cat_rate = f[k][dict_idx]
-                rst_r[str(keep_name) + "_" + k] = cat_rate
-        results.append(rst_r)
-    results_np = [[v for k, v in r.items()] for r in results]
-    results_np = np.array(results_np)
-    columns = [k for k, v in results[0].items()]
-    return results_np, columns
-
-def save_feature_df(raw_df, save_name, feature_dict):
-    results = []
-    for i in range(raw_df.shape[0]):
-        raw_r = raw_df.iloc[i]
-        rst_r = {keep_names[0]: raw_r[keep_names[0]]}
-
-        for j in range(1, len(keep_names)):
-            k = keep_names[j]
-            label = str(raw_r[k])
-            if is_nan(label):
-                label = str(label).lower()
-            f = feature_dict[k]
-            dict_idx = f['label'].index(label)
-            cat_rate = f['category_rate'][dict_idx]
-            clk_rate = f['click_rate'][dict_idx]
-            clk_prob = f['click_probability'][dict_idx]
-            rst_r[str(k) + "_cat_rate"] = clk_rate
-            rst_r[str(k) + "_clk_rate"] = clk_rate
-            rst_r[str(k) + "_clk_prob"] = clk_prob
-        results.append(rst_r)
-    results_np = [[v for k, v in r.items()] for r in results]
-    results_np = np.array(results_np)
-    columns = [k for k, v in results[0].items()]
-    feature_df = pd.DataFrame(data=results_np, columns=columns)
-
-    hfs = pd.HDFStore(save_name, complevel=6)
-    hfs['feature_df'] = feature_df  # write to HDF5
-    hfs.close()
+    return raw_df
 
 
 def gen_feature(chunk_paths, raw_file, other_files, feature_dict, save_dir, mode='train'):
+    for col_k, col_v in feature_dict['raw_data'].items():
+        for k, v in col_v.items():
+            num_0, num_1 = 0, 0
+            if '0' in v:
+                num_0 = v['0']
+            if '1' in v:
+                num_1 = v['1']
+            p = num_1 / max(num_0 + num_1, 1)
+            v['p'] = p
     for idx, chunk_path in tqdm(enumerate(chunk_paths)):
         save_name = os.path.join(save_dir, "{}_feature_chunk_{:06d}.h5".format(mode, idx))
         if os.path.exists(save_name):
@@ -107,13 +81,17 @@ def gen_feature(chunk_paths, raw_file, other_files, feature_dict, save_dir, mode
             hfs.close()
         else:
             hfs = pd.HDFStore(chunk_path)
-            raw_df, raw_idx_df = hfs['raw_df']
+            raw_df = hfs['raw_df']
             hfs.close()
             raw_df, features_names = operator_df(raw_df, features_names)
             keep_names = [r['name'] for r in features_names]
             raw_df = raw_df[keep_names]
 
-        save_feature_df(raw_df, save_name, feature_dict)
+        raw_df = raw2feature_df(raw_df, feature_dict['raw_data'])
+        hfs = pd.HDFStore(save_name, complevel=6)
+        hfs['feature_df'] = raw_df  # write to HDF5
+        hfs.close()
+
 
 def main():
     # 预先定义环境
@@ -125,10 +103,9 @@ def main():
     train_chunk_paths = glob.glob(cfg.train_chunk_path + r"train_chunk_*.h5")
     test_chunk_paths = glob.glob(cfg.test_chunk_path + r"test_chunk_*.h5")
 
-    gen_feature(train_chunk_paths, cfg.raw_train_file, cfg.other_train_files, feature_dict['data'],
-                cfg.train_chunk_path,
+    gen_feature(train_chunk_paths, cfg.raw_train_file, cfg.other_train_files, feature_dict, cfg.train_chunk_path,
                 mode='train')
-    gen_feature(test_chunk_paths, cfg.raw_test_file, cfg.other_train_files, feature_dict['data'], cfg.test_chunk_path,
+    gen_feature(test_chunk_paths, cfg.raw_test_file, cfg.other_train_files, feature_dict, cfg.test_chunk_path,
                 mode='test')
     print('generate feature successfully!')
 

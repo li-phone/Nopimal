@@ -68,9 +68,9 @@ def format_col(col, r):
 
         elif r['type'] == 'str':
             col = [x if x != x else str(x) for x in col]
-            if 'lower' in r and r['lower'] is True:
+            if 'transform' in r and r['transform'] == 'lower':
                 col = [x.lower() for x in col]
-            elif 'upper' in r and r['upper'] is True:
+            elif 'transform' in r and r['transform'] == 'upper':
                 col = [x.upper() for x in col]
 
     return col

@@ -86,24 +86,14 @@ def main():
     dataset_cfg = import_module("cfg.py")
     cfg = import_module(dataset_cfg.dataset_cfg_path)
     mkdirs(os.path.join(cfg.work_dirs, cfg.dataset_name))
-    from sklearn.datasets import load_iris
-    # 加载数据集
-    iris = load_iris()
-    dataset_df = pd.DataFrame(
-        data={
-            'target': iris.target,
-            'A': iris.data[:, 0],
-            'B': iris.data[:, 1],
-            'C': iris.data[:, 2],
-            'D': iris.data[:, 3],
-        }
-    )
-    # chunk_paths = glob.glob(cfg.train_chunk_path + r"train_features_*.h5")
-    # for idx, chunk_path in tqdm(enumerate(chunk_paths)):
-    #     hfs = pd.HDFStore(chunk_path)
-    #     raw_df = hfs['raw_df']
-    #     hfs.close()
-    #     dataset_df = pd.concat([dataset_df, raw_df])
+
+    dataset_df = pd.DataFrame()
+    chunk_paths = glob.glob(cfg.train_chunk_path + r"train_feature_*.h5")
+    for idx, chunk_path in tqdm(enumerate(chunk_paths)):
+        hfs = pd.HDFStore(chunk_path)
+        feature_df = hfs['feature_df']
+        hfs.close()
+        dataset_df = pd.concat([dataset_df, feature_df])
 
     train_ratio = cfg.train_val_test_ratio[0] / np.sum(cfg.train_val_test_ratio)
     train_dataset = dataset_df.sample(frac=train_ratio, random_state=cfg.random_state)
