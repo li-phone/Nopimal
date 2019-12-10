@@ -48,7 +48,8 @@ def raw2feature_df(raw_df, feature_dict):
         for j, x in enumerate(col):
             p = 0
             for y in x:
-                p += feature_dict[name][y]['p']
+                if y in feature_dict[name]:
+                    p += feature_dict[name][y]['p']
             col[j] = p
         raw_df[name] = col
 
