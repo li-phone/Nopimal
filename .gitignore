@@ -16,5 +16,6 @@ data/*/raw_data
 *.pkl.json
 *.log.json
 *.csv
+*.pyc
 
 # custom
