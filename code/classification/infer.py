@@ -1,25 +1,28 @@
+# MIT License
+#
+# Copyright(c) [2019] [liphone/lifeng] [email: 974122407@qq.com]
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files(the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and /or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions :
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+
 import numpy as np
 import pandas as pd
-from sklearn.metrics import roc_auc_score
-import sklearn
-from sklearn import naive_bayes
-import xgboost
-from numpy import loadtxt
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn import naive_bayes
-from sklearn.ensemble import RandomForestClassifier
-from sklearn import svm  # svm支持向量机
-from xgboost import XGBClassifier
-from sklearn.tree import ExtraTreeClassifier
-from sklearn.utils import shuffle
-from sklearn.model_selection import GridSearchCV, KFold, train_test_split
-from sklearn.metrics import make_scorer, accuracy_score
 import glob
 import os
 from tqdm import tqdm
