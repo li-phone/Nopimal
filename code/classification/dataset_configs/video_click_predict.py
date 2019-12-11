@@ -94,13 +94,14 @@ train_mode = ['train']
 val_mode = ['valA', 'valB']
 train_models = [
     dict(name='ABT', random_state=random_state, params=None),
-    dict(name='DT', random_state=random_state, params=None),
-    dict(name='GBT', random_state=random_state, params=None),
-    # dict(name='KNN', random_state=random_state, params=None),
-    dict(name='LR', random_state=random_state, params=None),
-    dict(name='GNB', random_state=random_state, params=None),
     dict(name='RF', random_state=random_state, params=None),
-    # dict(name='SVM', random_state=random_state, params=None),
     dict(name='XGB', random_state=random_state, params=None),
-    dict(name='ET', random_state=random_state, params=None),
+    dict(name='GBT', random_state=random_state, params=None),
+    dict(name='LGB', random_state=random_state, params=None),
+    # dict(name='DT', random_state=random_state, params=None),
+    # # dict(name='KNN', random_state=random_state, params=None),
+    # dict(name='LR', random_state=random_state, params=None),
+    # dict(name='GNB', random_state=random_state, params=None),
+    # # dict(name='SVM', random_state=random_state, params=None),
+    # dict(name='ET', random_state=random_state, params=None),
 ]

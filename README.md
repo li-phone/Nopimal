@@ -1,16 +1,15 @@
 # Nopimal
 "Nopimal", "Nopi" or "诺派", No Pain in Machine Learning. 
 
-#### Running Environment
 
-Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz，2001 Mhz
+#### Procedure
 
-#### Elapsed Time
+1.  Split dataset to the chunks
+2.  According to chunks, generate the feature dictionary
+3.  Map feature dictionary to features
+4.  Using features to train the data
+5.  Infer the unknown data
 
-| Module Name | Pure Python | Python C++ Extension |
-| :---------: | :---------: | :-----------: |
-| format_df  | 57it [10:52, 16.05s/20w/it] | unnecessary
-| operator_df  | 63.145s/20w | unnecessary
-| count_df  | 42.167s/20w | unnecessary
-| col2feature  | ??? | unnecessary
 
+#### Result
+Not good.

@@ -26,6 +26,7 @@ from tqdm import tqdm
 from sklearn.externals import joblib
 from sklearn.metrics import classification_report
 from sklearn.utils import shuffle
+import lightgbm as lgb
 from operator_module.utils import *
 
 
@@ -66,6 +67,9 @@ def get_model(name, random_state=666):
 
     elif name == 'ET':
         return ExtraTreeClassifier(random_state=random_state)
+
+    elif name == 'LGB':
+        return lgb.LGBMClassifier()
 
 
 def train(x, y, name, save_name=None, random_state=None):

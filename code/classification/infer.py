@@ -101,7 +101,7 @@ def main():
         submit_df.to_csv(save_name, header=True, index=False)
 
     submit_df = None
-    model_names = ['ABT', 'RF', 'XGB', 'LR', 'DT', 'ET','GBT','GNB']
+    model_names = ['ABT', 'RF', 'XGB', 'GBT']
     for model_name in model_names:
         save_name = os.path.join(submit_dir, '{}_infer_submit.csv'.format(model_name))
         m_df = pd.read_csv(save_name)
