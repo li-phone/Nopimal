@@ -110,7 +110,7 @@ def main():
         else:
             submit_df['target'] += m_df['target']
     col = list(submit_df['target'])
-    col = [1 if x >= (len(model_names)) // 2 else 0 for x in col]
+    col = [1 if x >= (len(model_names) + 0) // 2 else 0 for x in col]
     submit_df['target'] = col
     save_name = os.path.join(submit_dir, '{}_vote_submit.csv'.format('_'.join(model_names)))
     submit_df.to_csv(save_name, header=True, index=False)
