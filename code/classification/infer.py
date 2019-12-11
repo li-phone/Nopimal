@@ -88,17 +88,17 @@ def main():
         normed_test_data = normed_test_data.fillna(0)
 
     raw_test_df = chunk2df(cfg.split_chunk_path, cfg.raw_test_file['split_mode'], 'chunk', 'raw_df')
-    raw_test_ids = np.array(raw_test_df['id'])
+    raw_test_ids = np.array(raw_test_df[cfg.id_name])
     for r in tqdm(cfg.train_models):
         model_name = r['name']
         save_name = os.path.join(save_dir, "{}.m".format(model_name))
         model = joblib.load(save_name)
         test_pred_target = model.predict(normed_test_data)
         submit_df = pd.DataFrame(
-            data=dict(
-                id=raw_test_ids,
-                target=test_pred_target
-            )
+            data={
+                cfg.id_name: raw_test_ids,
+                cfg.target_name: test_pred_target
+            }
         )
         save_name = os.path.join(submit_dir, '{}_infer_submit.csv'.format(model_name))
         submit_df.to_csv(save_name, header=True, index=False)
@@ -111,10 +111,10 @@ def main():
         if submit_df is None:
             submit_df = m_df
         else:
-            submit_df['target'] += m_df['target']
-    col = list(submit_df['target'])
+            submit_df[cfg.target_name] += m_df[cfg.target_name]
+    col = list(submit_df[cfg.target_name])
     col = [1 if x >= (len(model_names) + 0) // 2 else 0 for x in col]
-    submit_df['target'] = col
+    submit_df[cfg.target_name] = col
     save_name = os.path.join(submit_dir, '{}_vote_submit.csv'.format('_'.join(model_names)))
     submit_df.to_csv(save_name, header=True, index=False)
 

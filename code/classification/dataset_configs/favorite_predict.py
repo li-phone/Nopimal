@@ -1407,6 +1407,7 @@ other_train_files = []
 # features settings
 feature_mode = ['train']
 target_name = 'favorite'
+id_name = 'PassengerId'
 feature_dict_file = feature_save_dir + "feature_dict_train.json"
 draw_feature = True
 style = 'darkgrid'
