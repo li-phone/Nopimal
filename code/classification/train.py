@@ -111,6 +111,16 @@ def main():
     mkdirs(save_dir)
 
     train_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.train_mode)
+    # 先求normalization参数
+    normal_stats = None
+    if cfg.normalization == 'global':
+        normal_mode = cfg.train_mode
+        normal_mode.extend(cfg.val_mode)
+        normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
+    elif cfg.normalization == 'local':
+        normal_stats = None
+
+    # 是否平衡数据集
     if cfg.balanced_data:
         train_1 = train_dataset[train_dataset[cfg.target_name] == 1]
         train_0 = train_dataset.drop(train_1.index)
@@ -124,17 +134,11 @@ def main():
 
     train_labels = train_dataset.pop(cfg.target_name)
 
-    normal_stats = None
+    # 标准化
     if cfg.normalization == 'none':
         normed_train_data = train_dataset
         normed_train_data = normed_train_data.fillna(0)
     else:
-        if cfg.normalization == 'global':
-            normal_mode = cfg.train_mode
-            normal_mode.extend(cfg.val_mode)
-            normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
-        elif cfg.normalization == 'local':
-            normal_stats = None
         normed_train_data = norm_df(train_dataset, normal_stats)
         normed_train_data = normed_train_data.fillna(0)
 
@@ -156,8 +160,11 @@ def main():
 
             print('\t{}:\n'.format(mode))
             rpt = evaluate(model, normed_val_data, val_labels, output_dict=True)
-            print(evaluate(model, normed_val_data, val_labels, output_dict=False))
+            rpt_str = evaluate(model, normed_val_data, val_labels, output_dict=False)
+            print(rpt_str)
             rpt_row.extend([rpt['macro avg']['f1-score']])
+            with open(os.path.join(save_dir, 'train_log.txt'), 'a') as fp:
+                fp.write(rpt_str)
         log_df.append(np.array(rpt_row))
     header = ['name']
     header.extend(cfg.val_mode)

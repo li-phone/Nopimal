@@ -21,8 +21,8 @@ raw_train_file = dict(
         dict(name='netmodel', type='str', transform='lower', map=True),
         dict(name='osversion', type='str', transform='lower', map=True),
         dict(name='device_version', type='str', transform='lower', map=True),
-        dict(name='lng', type='float', command='group', group_dists=(5,)),
-        dict(name='lat', type='float', command='group', group_dists=(5,)),
+        dict(name='lng', type='float', command='group', group_dists=(-5,)),
+        dict(name='lat', type='float', command='group', group_dists=(-5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
              operators=('hour', 'mday', 'wday'))
     ]
@@ -42,8 +42,8 @@ raw_test_file = dict(
         dict(name='netmodel', type='str', transform='lower', map=True),
         dict(name='osversion', type='str', transform='lower', map=True),
         dict(name='device_version', type='str', transform='lower', map=True),
-        dict(name='lng', type='float', command='group', group_dists=(5,)),
-        dict(name='lat', type='float', command='group', group_dists=(5,)),
+        dict(name='lng', type='float', command='group', group_dists=(-5,)),
+        dict(name='lat', type='float', command='group', group_dists=(-5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
              operators=('hour', 'mday', 'wday'))
         # command命令用来求取特征, 非command命令只是做一些变换, 并没有用来求取特征
@@ -55,7 +55,7 @@ other_train_files = [
         primary_key='deviceid',
         keep='last',
         features_names=[
-            dict(name='applist', command='split', operators=('len',), group_dists=(5,), splits=(' ',), index=(1, -2)),
+            dict(name='applist', command='split', operators=('len',), group_dists=(-5,), splits=(' ',), index=(1, -2)),
             # 长度组距为负数，则不分组
         ]
     ),
@@ -65,14 +65,14 @@ other_train_files = [
         keep='last',
         features_names=[
             dict(name='outertag', command='split', operators=('len', 'sum', 'mean', 'min', 'max'),
-                 group_dists=(1, 1, 0.5, 1, 1), splits=('|', ':'), ),
+                 group_dists=(-1, -1, -0.5, -1, -1), splits=('|', ':'), ),
             dict(name='tag', command='split', operators=('len', 'sum', 'mean', 'min', 'max',),
-                 group_dists=(2, 10, 2, 1, 10), splits=('|', ':'), ),
+                 group_dists=(-2, -10, -2, -1, -10), splits=('|', ':'), ),
             dict(name='personidentification', map=True),
             dict(name='gender', map=True),
-            dict(name='level', type='float', command='group', group_dists=(2,)),
-            dict(name='followscore', type='float', command='group', group_dists=(1,)),
-            dict(name='personalscore', type='float', command='group', group_dists=(1,)),
+            dict(name='level', type='float', command='group', group_dists=(-2,)),
+            dict(name='followscore', type='float', command='group', group_dists=(-1,)),
+            dict(name='personalscore', type='float', command='group', group_dists=(-1,)),
         ]
     )
 ]
@@ -87,7 +87,7 @@ style = 'darkgrid'
 # train settings
 work_dirs = "./work_dirs/"
 dataset_name = "video_click_predict"
-balanced_data = True
+balanced_data = False
 normalization = 'none' # global, local, none
 random_state = 666
 train_mode = ['train']

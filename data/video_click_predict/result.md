@@ -8,7 +8,7 @@ train valA valB ratio is 0.6: 0.2: 0.2
 
 evaluation: f1 score
 
-#### Validation Result
+#### Group Validation Result
 
   
     balance: True
@@ -53,6 +53,53 @@ evaluation: f1 score
     1	DT	0.67725012	0.726123673
     7	ET	0.67932611	0.712869278
     4	GNB	0.616158589	0.621908086
+
+#### No Group Validation Result
+
+    balance: True
+    normalization: none
+    
+	index   name	valA            valB
+    5	RF	0.716406018	0.763932879
+    3	LR	0.721611767	0.753659353
+    2	GBT	0.70872112	0.746669503
+    6	XGB	0.707815859	0.745369431
+    0	ABT	0.697041904	0.733745032
+    1	DT	0.677419651	0.726800543
+    7	ET	0.684164608	0.719870161
+    4	GNB	0.589892232	0.59660057
+
+
+
+
+    balance: True
+    normalization: global
+    
+	index   name	valA            valB
+    5	RF	0.71540126	0.762661779
+    3	LR	0.721702289	0.753702294
+    2	GBT	0.708095954	0.746163196
+    6	XGB	0.70716723	0.744384649
+    0	ABT	0.699181951	0.736811105
+    1	DT	0.676457426	0.725954379
+    7	ET	0.674884058	0.712960922
+    4	GNB	0.59578632	0.602973321
+    
+    
+    
+    balance: True
+    normalization: local
+    
+	index   name	valA            valB
+    3	LR	0.601313792	0.618056217
+    2	GBT	0.548410707	0.554682272
+    6	XGB	0.539646341	0.545827358
+    5	RF	0.516453847	0.524804098
+    4	GNB	0.507928991	0.513858575
+    0	ABT	0.506069484	0.512283896
+    7	ET	0.492273091	0.502316582
+    1	DT	0.454317333	0.484609996
+
 
 #### Summary
 From the above result, we can see that these are not good.

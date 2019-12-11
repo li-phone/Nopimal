@@ -99,7 +99,8 @@ def operator_col(col, fea_attrib):
 
     elif "group" == fea_attrib['command']:
         for g in fea_attrib['group_dists']:
-            col = [x if x != x else int(x / g) for x in col]
+            if g > 0:
+                col = [x if x != x else int(x / g) for x in col]
         out_features.append(col)
         fea_attribs.append(fea_attrib)
 
