@@ -64,7 +64,7 @@ def main():
     # 预先定义环境
     dataset_cfg = import_module("cfg.py")
     cfg = import_module(dataset_cfg.dataset_cfg_path)
-    save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name)
+    save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name, 'mode_' + '_'.join(cfg.train_mode))
     submit_dir = os.path.join(save_dir, "submit")
     mkdirs(submit_dir)
     mkdirs(save_dir)
