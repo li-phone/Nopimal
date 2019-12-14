@@ -25,6 +25,7 @@ raw_train_file = dict(
         dict(name='lat', type='float', command='group', group_dists=(-5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
              operators=('hour', 'mday', 'wday'))
+        # negative group_dists not to carry group
     ]
 )
 raw_test_file = dict(
@@ -89,7 +90,7 @@ style = 'darkgrid'
 work_dirs = "./work_dirs/"
 dataset_name = "video_click_predict"
 balanced_data = False
-normalization = 'none' # global, local, none
+normalization = 'none'  # global, local, none
 random_state = 666
 train_mode = ['train']
 val_mode = ['valA', 'valB']
