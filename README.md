@@ -1,8 +1,8 @@
 # Nopimal
-"Nopimal", "Nopi" or "诺派", No Pain in Machine Learning. 
+"Nopimal", "Nopi" or "诺派", No Pain in Machine Learning. This project aims to simplify the machine learning producer and obtains the not bad result. Welcome DaLao to join us and give us some advices.
 
 
-#### Procedure
+#### Structure
 
 1.  Split dataset to the chunks
 2.  According to chunks, generate the feature dictionary
@@ -10,6 +10,9 @@
 4.  Using features to train the data
 5.  Infer the unknown data
 
+#### Get Started
+
+    python main.py
 
 #### Test Result
 
