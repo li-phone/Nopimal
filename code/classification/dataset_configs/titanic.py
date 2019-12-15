@@ -13,14 +13,17 @@ raw_train_file = dict(
     chunk_size=200000,
     features_names=[
         dict(name='Survived', type='int'),
-        dict(name='Pclass', type='int', map=True),
-        dict(name='Sex', map=True),
-        dict(name='Age', type='int', map=False),
-        dict(name='SibSp', type='int', map=False),
-        dict(name='Parch', type='int', map=False),
+        dict(name='Pclass', type='int', map='onehot'),
+        dict(name='Sex', map='onehot'),
+        dict(name='Age', type='int'),
+        dict(name='SibSp', type='int'),
+        dict(name='Parch', type='int'),
         dict(name='Fare', type='float'),
-        dict(name='Cabin', map=True),
-        dict(name='Embarked', map=True),
+
+        # dict(name='Cabin', map='probability', command='split', operators=('len',), group_dists=(-5,), splits=('|',)),
+        dict(name='Cabin', map='onehot'),
+        dict(name='Embarked', map='onehot'),
+        # map choice: probability, onehot
     ]
 )
 raw_test_file = dict(
@@ -30,14 +33,15 @@ raw_test_file = dict(
     split_ratio=[1.0],
     chunk_size=200000,
     features_names=[
-        dict(name='Pclass', type='int', map=True),
-        dict(name='Sex', map=True),
-        dict(name='Age', type='int', map=False),
-        dict(name='SibSp', type='int', map=False),
-        dict(name='Parch', type='int', map=False),
+        dict(name='Pclass', type='int', map='onehot'),
+        dict(name='Sex', map='onehot'),
+        dict(name='Age', type='int'),
+        dict(name='SibSp', type='int'),
+        dict(name='Parch', type='int'),
         dict(name='Fare', type='float'),
-        dict(name='Cabin', map=True),
-        dict(name='Embarked', map=True),
+        # dict(name='Cabin', map='probability', command='split', operators=('len',), group_dists=(-5,), splits=(' ',)),
+        dict(name='Cabin', map='onehot'),
+        dict(name='Embarked', map='onehot'),
     ]
 )
 other_train_files = []
@@ -54,7 +58,7 @@ style = 'darkgrid'
 work_dirs = "./work_dirs/"
 dataset_name = "titanic"
 balanced_data = False
-normalization = 'none' # global, local, none
+normalization = 'none'  # global, local, none
 random_state = 666
 train_mode = ['train']
 val_mode = ['valA', 'valB']

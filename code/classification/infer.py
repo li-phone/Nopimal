@@ -27,6 +27,8 @@ def chunk2df(chunk_path, mode, glob_word='feature_chunk', h5_key='feature_df'):
             hfs.close()
             dataset_df = pd.concat([dataset_df, feature_df])
 
+    columns = np.sort(dataset_df.columns)
+    dataset_df = dataset_df[list(columns)]
     return dataset_df
 
 

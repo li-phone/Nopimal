@@ -17,35 +17,38 @@ from operator_module.utils import *
 
 
 def get_draw_dict(feature_dict):
+    names = [r['name'] for r in feature_dict['features_names']]
     for col_k, col_v in feature_dict['raw_data'].items():
-        # print('key', col_k)
-        labels = [k for k, v in col_v.items()]
-        labels = np.sort(labels)
-        sum_0, sum_1 = 0, 0
-        for label in labels:
-            if '0' in col_v[label]:
-                sum_0 += col_v[label]['0']
-            if '1' in col_v[label]:
-                sum_1 += col_v[label]['1']
-        # assert sum_0 + sum_1 == feature_dict['total_num']
-        category_rates, click_probabilities, click_rates = [], [], []
-        for label in labels:
-            num_0, num_1 = 0, 0
-            if '0' in col_v[label]:
-                num_0 = col_v[label]['0']
-            if '1' in col_v[label]:
-                num_1 = col_v[label]['1']
-            num = max(num_0 + num_1, 1)
-            click_probabilities.append(num_1 / num)
-            click_rates.append(num_1 / max(sum_1, 1))
-            category_rates.append(num / max(sum_0 + sum_1, 1))
+        r_idx = names.index(col_k)
+        if 'map' in feature_dict['features_names'][r_idx] and feature_dict['features_names'][r_idx]['map'] == 'probability':
+            # print('key', col_k)
+            labels = [k for k, v in col_v.items()]
+            labels = np.sort(labels)
+            sum_0, sum_1 = 0, 0
+            for label in labels:
+                if '0' in col_v[label]:
+                    sum_0 += col_v[label]['0']
+                if '1' in col_v[label]:
+                    sum_1 += col_v[label]['1']
+            # assert sum_0 + sum_1 == feature_dict['total_num']
+            category_rates, click_probabilities, click_rates = [], [], []
+            for label in labels:
+                num_0, num_1 = 0, 0
+                if '0' in col_v[label]:
+                    num_0 = col_v[label]['0']
+                if '1' in col_v[label]:
+                    num_1 = col_v[label]['1']
+                num = max(num_0 + num_1, 1)
+                click_probabilities.append(num_1 / num)
+                click_rates.append(num_1 / max(sum_1, 1))
+                category_rates.append(num / max(sum_0 + sum_1, 1))
 
-        feature_dict['data'][col_k] = dict(
-            label=labels,
-            category_rate=category_rates,
-            click_probability=click_probabilities,
-            click_rate=click_rates,
-        )
+            feature_dict['data'][col_k] = dict(
+                label=labels,
+                category_rate=category_rates,
+                click_probability=click_probabilities,
+                click_rate=click_rates,
+            )
     return feature_dict
 
 
@@ -143,6 +146,8 @@ def gen_dict(cfg, feature_dict):
             save_name = os.path.join(mode_dir, "{}_operator_chunk_{:06d}.h5".format(mode, idx))
             keep_names = [r['name'] for r in features_names]
             raw_df = raw_df[keep_names]
+            unique_columns = list(np.unique(np.array(raw_df.columns)))
+            raw_df = raw_df[unique_columns]
             if not os.path.exists(save_name):
                 hfs = pd.HDFStore(save_name, complevel=6)
                 hfs['operator_df'] = raw_df  # write to HDF5

@@ -18,15 +18,15 @@ raw_train_file = dict(
         },
         {
             "name": "user_id",
-            "map": True
+            "map": 'onehot'
         },
         {
             "name": "seller",
-            "map": True
+            "map": 'onehot'
         },
         {
             "name": "Product_id",
-            "map": True
+            "map": 'onehot'
         },
         {
             "name": "UserInfo_52",

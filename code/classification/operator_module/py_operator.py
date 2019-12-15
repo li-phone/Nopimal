@@ -98,7 +98,7 @@ def operator_col(col, fea_attrib):
                 col = [x if x != x else x.split(split) for x in col]
                 tags = col
 
-        fea_attribs.append(dict(name=fea_attrib['name'] + "_tags", command="split", map=True))
+        fea_attribs.append(dict(name=fea_attrib['name'] + "_tags", command="split", map='probability'))
         out_features.append(tags)
 
         g = fea_attrib['group_dists']
@@ -177,13 +177,21 @@ def count_df(raw_df, feature_names, feature_dict):
     targets = [str(x) for x in targets]
     for i in range(1, len(feature_names)):
         r = feature_names[i]
-        if 'map' in r and r['map'] is True:
+        if 'map' in r:
             if r['name'] not in feature_dict:
                 feature_dict[r['name']] = dict()
             col = list(raw_df[r['name']])
-            col = [x if isinstance(x, list) else [x] for x in col]
-            col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
+            if r['map'] == 'probability':
+                col = [x if isinstance(x, list) else [x] for x in col]
+                col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
 
-            feature_dict[r['name']] = count_col(targets, col, feature_dict[r['name']])
+                feature_dict[r['name']] = count_col(targets, col, feature_dict[r['name']])
+
+            elif r['map'] == 'onehot':
+                col = ["$NaN$" if x != x else str(x) for x in col]
+                col = list(np.unique(col))
+                for i, v in enumerate(col):
+                    if v not in feature_dict[r['name']]:
+                        feature_dict[r['name']][v] = len(feature_dict[r['name']]) + 1
 
     return feature_dict

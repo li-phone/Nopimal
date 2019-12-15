@@ -1,5 +1,5 @@
 # Nopimal
-"Nopimal", "Nopi" or "诺派", No Pain in Machine Learning. This project aims to simplify the machine learning producer and obtains the not bad result. Welcome DaLao to join us and give us some advices.
+"Nopimal", "Nopi" or "诺派", No Pain in Machine Learning. This project aims to simplify the machine learning procedures and obtains the not bad result. Welcome DaLao to join us and give us some advices.
 
 
 #### Structure
@@ -16,6 +16,10 @@
 
 #### Test Result
 
+**Tencent Social Advertisement Dataset**
+
+
+
 **Titanic Dataset**
 
     train data size: 891
@@ -23,16 +27,17 @@
     evaluation: f1 score
     
     id  name	valA	valB
-    1	RF	0.718304906	0.797179889
-    7	GNB	0.747159091	0.791724285
-    2	XGB	0.705460563	0.726081898
-    9	ET	0.714305228	0.721122347
-    6	LR	0.670417319	0.720878136
-    4	LGB	0.661299766	0.712720039
-    5	DT	0.613423007	0.707586619
-    3	GBT	0.660409035	0.685178635
-    0	ABT	0.637163394	0.655549232
-    8	SVM	0.623147495	0.623147495
+    4	LGB	0.777942614	0.83036079
+    2	XGB	0.780903816	0.80594338
+    0	ABT	0.743832237	0.802667811
+    1	RF	0.768229167	0.800476391
+    3	GBT	0.778881988	0.798870056
+    5	DT	0.741005291	0.795319264
+    6	LR	0.74751773	0.79118485
+    7	GNB	0.774924618	0.78699641
+    9	ET	0.73444286	0.724754605
+    8	SVM	0.573242149	0.564503421
+
 
 
 #### License

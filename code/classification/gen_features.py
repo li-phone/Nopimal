@@ -20,7 +20,7 @@ def raw2feature_df(raw_df, feature_names, feature_dict):
         r = feature_names[i]
         name = r['name']
         col = list(raw_df[name])
-        if 'map' in r and r['map'] is True:
+        if 'map' in r and r['map'] == 'probability':
             col = [x if isinstance(x, list) else [x] for x in col]
             col = [["$NaN$" if y != y else str(y) for y in x] for x in col]
             for j, x in enumerate(col):
@@ -29,6 +29,15 @@ def raw2feature_df(raw_df, feature_names, feature_dict):
                     if y in feature_dict[name]:
                         p += feature_dict[name][y]['p']
                 col[j] = p
+            raw_df[name] = col
+        elif 'map' in r and r['map'] == 'onehot':
+            col = ["$NaN$" if x != x else str(x) for x in col]
+            for j, x in enumerate(col):
+                if x in feature_dict[name]:
+                    col[j] = feature_dict[name][x]
+                else:
+                    feature_dict[name][x] = len(feature_dict[name]) + 1
+                    col[j] = feature_dict[name][x]
             raw_df[name] = col
         else:
             col = [0 if x != x else x for x in col]
@@ -78,15 +87,19 @@ def main():
     mkdirs(cfg.feature_save_dir)
 
     feature_dict = load_dict(cfg.feature_dict_file)
+    names = [r['name'] for r in feature_dict['features_names']]
     for col_k, col_v in feature_dict['raw_data'].items():
-        for k, v in col_v.items():
-            num_0, num_1 = 0, 0
-            if '0' in v:
-                num_0 = v['0']
-            if '1' in v:
-                num_1 = v['1']
-            p = num_1 / max(num_0 + num_1, 1)
-            v['p'] = p
+        r_idx = names.index(col_k)
+        if 'map' in feature_dict['features_names'][r_idx] and feature_dict['features_names'][r_idx][
+            'map'] == 'probability':
+            for k, v in col_v.items():
+                num_0, num_1 = 0, 0
+                if '0' in v:
+                    num_0 = v['0']
+                if '1' in v:
+                    num_1 = v['1']
+                p = num_1 / max(num_0 + num_1, 1)
+                v['p'] = p
 
     gen_feature(cfg.raw_train_file, cfg.other_train_files, feature_dict, cfg.split_chunk_path)
     gen_feature(cfg.raw_test_file, cfg.other_train_files, feature_dict, cfg.split_chunk_path)
