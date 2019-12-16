@@ -10,10 +10,11 @@ import time
 
 
 def import_module(path):
-    _module = path.replace('\\', '/')
-    _module = _module.split('/')
-    _module[-1] = _module[-1].split('.')[0]
-    _module_path = '.'.join(x for x in _module)
+    py_idx = path.rfind('.py')
+    if py_idx != -1:
+        path = path[:py_idx]
+    _module_path = path.replace('\\', '/')
+    _module_path = _module_path.replace('/', '.')
     return importlib.import_module(_module_path)
 
 
