@@ -14,8 +14,8 @@ raw_train_file = dict(
     features_names=[
         dict(name='label', type='int'),
         dict(name='clickTime', type='int', map=""),
-        dict(name='connectionType', type='int', map=""),
-        dict(name='telecomsOperator', type='int', transform='lower', map=""),
+        dict(name='connectionType', type='int', map="probability"),
+        dict(name='telecomsOperator', type='int', transform='lower', map="probability"),
         # negative group_dists not to carry group
     ]
 )
@@ -27,8 +27,8 @@ raw_test_file = dict(
     chunk_size=200000,
     features_names=[
         dict(name='clickTime', type='int', map=""),
-        dict(name='connectionType', type='int', map=""),
-        dict(name='telecomsOperator', type='int', transform='lower', map=""),
+        dict(name='connectionType', type='int', map="probability"),
+        dict(name='telecomsOperator', type='int', transform='lower', map="probability"),
         # negative group_dists not to carry group
     ]
 )
@@ -38,28 +38,8 @@ other_train_files = [
         primary_key='creativeID',
         keep='last',
         features_names=[
-            dict(name='adID', type='int', map=""),
-            dict(name='camgaignID', type='int', map=""),
-            dict(name='advertiserID', type='int', map=""),
-            dict(name='appID', type='int', map=""),
-            dict(name='appPlatform', type='int', map=""),
-        ]
-    ),
-    dict(
-        file_path=data_root + 'raw_data/app_categories.csv',
-        primary_key='appID',
-        keep='last',
-        features_names=[
-            dict(name='appCategory', type='int', map=""),
-        ]
-    ),
-    dict(
-        file_path=data_root + 'raw_data/position.csv',
-        primary_key='positionID',
-        keep='last',
-        features_names=[
-            dict(name='sitesetID', type='int', map=""),
-            dict(name='positionType', type='int', map=""),
+            dict(name='appID', type='int', map="probability"),
+            dict(name='appPlatform', type='int', map="probability"),
         ]
     ),
     dict(
@@ -68,28 +48,48 @@ other_train_files = [
         keep='last',
         features_names=[
             dict(name='age', type='int', map=""),
-            dict(name='gender', type='int', map=""),
-            dict(name='education', type='int', map=""),
-            dict(name='marriageStatus', type='int', map=""),
-            dict(name='haveBaby', type='int', map=""),
-            dict(name='hometown', type='int', map=""),
-            dict(name='residence', type='int', map=""),
+            dict(name='gender', type='int', map="probability"),
+            dict(name='education', type='int', map="probability"),
+            dict(name='marriageStatus', type='int', map="probability"),
+            dict(name='haveBaby', type='int', map="probability"),
+            dict(name='hometown', type='int', map="probability"),
+            dict(name='residence', type='int', map="probability"),
         ]
     ),
     dict(
-        file_path=data_root + 'raw_data/user_app_actions.csv',
-        primary_key='userID',
+        file_path=data_root + 'raw_data/position.csv',
+        primary_key='positionID',
         keep='last',
         features_names=[
-            dict(name='installTime', type='int', map=""),
+            dict(name='sitesetID', type='int', map="probability"),
+            dict(name='positionType', type='int', map="probability"),
         ]
     ),
     dict(
-        file_path=data_root + 'raw_data/user_installedapps.csv',
+        file_path=data_root + 'raw_data/app_categories.csv',
+        primary_key='appID',
+        keep='last',
+        features_names=[
+            dict(name='appCategory', type='int', map="probability"),
+        ]
+    ),
+    dict(
+        file_path=data_root + 'raw_data/user_app_actions_transform.csv',
         primary_key='userID',
         keep='last',
         features_names=[
-            dict(name='appID', type='int', map=""),
+            dict(name='appInstallTime', map='probability', command='split',
+                 operators=('len', 'min', 'max', 'mean', 'sum'), group_dists=(-5, -5, -5, -5, -5),
+                 splits=('|', ':')),
+        ]
+    ),
+    dict(
+        file_path=data_root + 'raw_data/user_installedapps_transform.csv',
+        primary_key='userID',
+        keep='last',
+        features_names=[
+            dict(name='applist', map='probability', command='split', operators=('len',), group_dists=(-5,),
+                 splits=('|')),
         ]
     ),
 ]
@@ -105,7 +105,7 @@ style = 'darkgrid'
 # train settings
 work_dirs = "./work_dirs/"
 dataset_name = "tencent_social_ads"
-balanced_data = False
+balanced_data = True
 normalization = 'none'  # global, local, none
 random_state = 666
 train_mode = ['train']

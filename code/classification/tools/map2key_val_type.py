@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 def map_k_list(data_df, pk):
     data_dict = {}
-    for i in range(data_df.shape[0]):
+    for i in tqdm(range(data_df.shape[0])):
         row = data_df.iloc[i]
         r_id = row[pk]
         if r_id not in data_dict:
