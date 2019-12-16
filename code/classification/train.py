@@ -37,43 +37,43 @@ def norm_df(x, train_stats=None):
     return (x - train_stats['mean']) / train_stats['std']
 
 
-def get_model(name, random_state=666):
+def get_model(name, random_state=666, params=dict()):
     if name == 'ABT':
-        return AdaBoostClassifier(random_state=random_state)
+        return AdaBoostClassifier(random_state=random_state, **params)
 
     elif name == 'DT':
-        return DecisionTreeClassifier(random_state=random_state)
+        return DecisionTreeClassifier(random_state=random_state, **params)
 
     elif name == 'GBT':
-        return GradientBoostingClassifier(random_state=random_state)
+        return GradientBoostingClassifier(random_state=random_state, **params)
 
     elif name == 'KNN':
         return KNeighborsClassifier()
 
     elif name == 'LR':
-        return LogisticRegression(random_state=random_state)
+        return LogisticRegression(random_state=random_state, **params)
 
     elif name == 'GNB':
-        return naive_bayes.GaussianNB()
+        return naive_bayes.GaussianNB(**params)
 
     elif name == 'RF':
-        return RandomForestClassifier(random_state=random_state)
+        return RandomForestClassifier(random_state=random_state, **params)
 
     elif name == 'SVM':
-        return svm.SVC(probability=True, random_state=random_state)
+        return svm.SVC(probability=True, random_state=random_state, **params)
 
     elif name == 'XGB':
-        return XGBClassifier(random_state=random_state)
+        return XGBClassifier(random_state=random_state, **params)
 
     elif name == 'ET':
-        return ExtraTreeClassifier(random_state=random_state)
+        return ExtraTreeClassifier(random_state=random_state, **params)
 
     elif name == 'LGB':
         return lgb.LGBMClassifier()
 
 
-def train(x, y, name, save_name=None, random_state=None):
-    model = get_model(name=name, random_state=random_state)
+def train(x, y, name, save_name=None, random_state=None, params=dict()):
+    model = get_model(name=name, random_state=random_state, params=params)
     model.fit(x, y)  # 训练模型
     if save_name:
         joblib.dump(model, save_name, compress=5)
@@ -151,7 +151,8 @@ def main():
     log_df = []
     for train_model in tqdm(cfg.train_models):
         save_name = os.path.join(save_dir, "{}.m".format(train_model['name']))
-        model = train(normed_train_data, train_labels, train_model['name'], save_name, train_model['random_state'])
+        model = train(normed_train_data, train_labels, train_model['name'], save_name, train_model['random_state'],
+                      train_model['params'])
         print('\n\n{} {} {}'.format('=' * 36, train_model['name'], '=' * 36))
         rpt_row = [train_model['name']]
         for mode in cfg.val_mode:
