@@ -16,9 +16,6 @@
 
 #### Test Result
 
-**Tencent Social Advertisement Dataset**
-
-
 
 **Titanic Dataset**
 
