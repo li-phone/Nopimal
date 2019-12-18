@@ -55,6 +55,7 @@ draw_feature = True
 style = 'darkgrid'
 
 # train settings
+train_type = 'Regressor'
 work_dirs = "./work_dirs/"
 dataset_name = "titanic"
 balanced_data = False

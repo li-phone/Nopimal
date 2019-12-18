@@ -103,6 +103,7 @@ draw_feature = True
 style = 'darkgrid'
 
 # train settings
+train_type = 'Regressor'
 work_dirs = "./work_dirs/"
 dataset_name = "tencent_social_ads"
 balanced_data = True

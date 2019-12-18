@@ -13,14 +13,14 @@ raw_train_file = dict(
     chunk_size=200000,
     features_names=[
         dict(name='target', type='int'),  # default str
-        dict(name='pos', type='int', map=True),
-        dict(name='deviceid', map=True),
-        dict(name='app_version', map=True),
-        dict(name='newsid', type='int', map=True),
-        dict(name='device_vendor', type='str', transform='lower', map=True),
-        dict(name='netmodel', type='str', transform='lower', map=True),
-        dict(name='osversion', type='str', transform='lower', map=True),
-        dict(name='device_version', type='str', transform='lower', map=True),
+        dict(name='pos', type='int', map='onehot'),
+        dict(name='deviceid', map='onehot'),
+        dict(name='app_version', map='onehot'),
+        dict(name='newsid', type='int', map='onehot'),
+        dict(name='device_vendor', type='str', transform='lower', map='onehot'),
+        dict(name='netmodel', type='str', transform='lower', map='onehot'),
+        dict(name='osversion', type='str', transform='lower', map='onehot'),
+        dict(name='device_version', type='str', transform='lower', map='onehot'),
         dict(name='lng', type='float', command='group', group_dists=(-5,)),
         dict(name='lat', type='float', command='group', group_dists=(-5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
@@ -36,13 +36,13 @@ raw_test_file = dict(
     chunk_size=200000,
     features_names=[
         dict(name='pos', type='int'),
-        dict(name='deviceid', map=True),
-        dict(name='app_version', map=True),
-        dict(name='newsid', type='int', map=True),
-        dict(name='device_vendor', type='str', transform='lower', map=True),
-        dict(name='netmodel', type='str', transform='lower', map=True),
-        dict(name='osversion', type='str', transform='lower', map=True),
-        dict(name='device_version', type='str', transform='lower', map=True),
+        dict(name='deviceid', map='onehot'),
+        dict(name='app_version', map='onehot'),
+        dict(name='newsid', type='int', map='onehot'),
+        dict(name='device_vendor', type='str', transform='lower', map='onehot'),
+        dict(name='netmodel', type='str', transform='lower', map='onehot'),
+        dict(name='osversion', type='str', transform='lower', map='onehot'),
+        dict(name='device_version', type='str', transform='lower', map='onehot'),
         dict(name='lng', type='float', command='group', group_dists=(-5,)),
         dict(name='lat', type='float', command='group', group_dists=(-5,)),
         dict(name='ts', type='int', unit=1 / 1000, command='timestamp',
@@ -69,8 +69,8 @@ other_train_files = [
                  group_dists=(-1, -1, -0.5, -1, -1), splits=('|', ':'), ),
             dict(name='tag', command='split', operators=('len', 'sum', 'mean', 'min', 'max',),
                  group_dists=(-2, -10, -2, -1, -10), splits=('|', ':'), ),
-            dict(name='personidentification', map=True),
-            dict(name='gender', map=True),
+            dict(name='personidentification', map='onehot'),
+            dict(name='gender', map='onehot'),
             dict(name='level', type='float', command='group', group_dists=(-2,)),
             dict(name='followscore', type='float', command='group', group_dists=(-1,)),
             dict(name='personalscore', type='float', command='group', group_dists=(-1,)),
@@ -87,6 +87,7 @@ draw_feature = True
 style = 'darkgrid'
 
 # train settings
+train_type = 'Regressor'
 work_dirs = "./work_dirs/"
 dataset_name = "video_click_predict"
 balanced_data = False
@@ -103,7 +104,7 @@ train_models = [
     dict(name='DT', random_state=random_state, params=dict()),
     dict(name='LR', random_state=random_state, params=dict()),
     dict(name='GNB', random_state=random_state, params=dict()),
-    dict(name='SVM', random_state=random_state, params=dict()),
     dict(name='ET', random_state=random_state, params=dict()),
+    # dict(name='SVM', random_state=random_state, params=dict()),
     # dict(name='KNN', random_state=random_state, params=None),
 ]
