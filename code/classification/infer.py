@@ -1,103 +1,61 @@
 import numpy as np
 import pandas as pd
-import glob
 import os
-from tqdm import tqdm
 from sklearn.externals import joblib
-from sklearn.metrics import classification_report
-from sklearn.utils import shuffle
-from operator_module.utils import *
+from sklearn.preprocessing import StandardScaler
+from utils import *
 
 
-def norm_df(x, train_stats=None):
-    if train_stats is None:
-        train_stats = x.describe()
-        train_stats = train_stats.transpose()
-    return (x - train_stats['mean']) / train_stats['std']
+class Config(object):
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
-def chunk2df(chunk_path, mode, glob_word='feature_chunk', h5_key='feature_df'):
-    dataset_df = pd.DataFrame()
-    for m in mode:
-        mode_dir = os.path.join(chunk_path, m)
-        chunk_paths = glob.glob(os.path.join(mode_dir, r"{}_{}_*.h5".format(m, glob_word)))
-        for idx, chunk_path in enumerate(chunk_paths):
-            hfs = pd.HDFStore(chunk_path)
-            feature_df = hfs[h5_key]
-            hfs.close()
-            dataset_df = pd.concat([dataset_df, feature_df])
+class Inference(object):
+    def __init__(self, cfg, **kwargs):
+        if isinstance(cfg, str):
+            cfg = import_module(cfg)
+        self.cfg = Config(**cfg.Inference)
+        mkdirs(self.cfg.submit_dir)
+        self.models = {}
+        self.fine_models = {}
 
-    columns = np.sort(dataset_df.columns)
-    dataset_df = dataset_df[list(columns)]
-    return dataset_df
+    # 2: 特征归一化
+    def normalize(self, df):
+        if self.cfg.normalize_type == 'StandardScaler':
+            std = StandardScaler()
+            return std.fit_transform(df)
 
-
-def get_train_stats(split_chunk_path, mode):
-    x = chunk2df(split_chunk_path, mode=mode)
-    train_stats = x.describe()
-    train_stats = train_stats.transpose()
-    return train_stats
+    # 0: run
+    def run(self):
+        x1 = pd.read_csv(self.cfg.test['file'])
+        test_ids = np.array(x1[self.cfg.test['uid_key']])
+        x1.pop(self.cfg.test['uid_key'])
+        x1 = x1.fillna(0)
+        if self.cfg.normalize_type:
+            x1 = self.normalize(x1)
+        for v in self.cfg.models:
+            model_path = os.path.join(self.cfg.model_dir, "{}.m".format(v['name']))
+            checkpoint = joblib.load(model_path)
+            model = checkpoint['model']
+            pred_y1 = model.predict_proba(x1)
+            pred_y1 = pred_y1[:, 1]
+            submit_df = pd.DataFrame(
+                data={
+                    self.cfg.test['uid_key']: test_ids,
+                    self.cfg.test['target_key']: pred_y1
+                }
+            )
+            save_name = os.path.join(self.cfg.submit_dir, '{}_submit.txt'.format(v['name']))
+            submit_df.to_csv(save_name, header=False, index=False, sep='\t')
+        print('infer successfully!')
 
 
 def main():
-    # 预先定义环境
-    dataset_cfg = import_module("cfg.py")
-    cfg = import_module(dataset_cfg.dataset_cfg_path)
-    save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name, 'mode_' + '_'.join(cfg.train_mode))
-    submit_dir = os.path.join(save_dir, "submit")
-    mkdirs(submit_dir)
-    mkdirs(save_dir)
-
-    test_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.raw_test_file['split_mode'])
-    # 先求normalization参数
-    normal_stats = None
-    if cfg.normalization == 'global':
-        normal_mode = cfg.train_mode
-        normal_mode.extend(cfg.val_mode)
-        normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
-    elif cfg.normalization == 'local':
-        normal_stats = None
-
-    # 标准化
-    if cfg.normalization == 'none':
-        normed_test_data = test_dataset
-        normed_test_data = normed_test_data.fillna(0)
-    else:
-        normed_test_data = norm_df(test_dataset, normal_stats)
-        normed_test_data = normed_test_data.fillna(0)
-
-    raw_test_df = chunk2df(cfg.split_chunk_path, cfg.raw_test_file['split_mode'], 'chunk', 'raw_df')
-    raw_test_ids = np.array(raw_test_df[cfg.id_name])
-    for r in tqdm(cfg.train_models):
-        model_name = r['name']
-        save_name = os.path.join(save_dir, "{}.m".format(model_name))
-        model = joblib.load(save_name)
-        test_pred_target = model.predict(normed_test_data)
-        submit_df = pd.DataFrame(
-            data={
-                cfg.id_name: raw_test_ids,
-                cfg.target_name: test_pred_target
-            }
-        )
-        save_name = os.path.join(submit_dir, '{}_infer_submit.csv'.format(model_name))
-        submit_df.to_csv(save_name, header=True, index=False)
-
-    submit_df = None
-    model_names = [r['name'] for r in cfg.train_models]
-    for model_name in model_names:
-        save_name = os.path.join(submit_dir, '{}_infer_submit.csv'.format(model_name))
-        m_df = pd.read_csv(save_name)
-        if submit_df is None:
-            submit_df = m_df
-        else:
-            submit_df[cfg.target_name] += m_df[cfg.target_name]
-    col = list(submit_df[cfg.target_name])
-    col = [1 if x >= (len(model_names) + 0) // 2 else 0 for x in col]
-    submit_df[cfg.target_name] = col
-    save_name = os.path.join(submit_dir, '{}_vote_submit.csv'.format('_'.join(model_names)))
-    submit_df.to_csv(save_name, header=True, index=False)
-
-    print('infer successfully!')
+    infer = Inference('cfg.py')
+    infer.run()
+    print('train successfully!')
 
 
 if __name__ == "__main__":

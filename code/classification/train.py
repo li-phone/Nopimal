@@ -19,13 +19,23 @@ from sklearn.model_selection import GridSearchCV, KFold, train_test_split
 from sklearn.metrics import make_scorer, accuracy_score
 import glob
 import os
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import classification_report
 from tqdm import tqdm
 from sklearn.externals import joblib
-from sklearn.metrics.classification import *
-from sklearn.metrics.regression import *
 from sklearn.utils import shuffle
 import lightgbm as lgb
-from operator_module.utils import *
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import roc_auc_score, roc_curve, auc
+import matplotlib.pyplot as plt
+from mlxtend.classifier import StackingClassifier
+from utils import *
+
+try:
+    pass
+except:
+    pass
 
 
 def norm_df(x, train_stats=None):
@@ -35,180 +45,235 @@ def norm_df(x, train_stats=None):
     return (x - train_stats['mean']) / train_stats['std']
 
 
-def get_classifier_model(name, random_state=666, params=dict()):
-    if name == 'ABT':
+def get_classifier(type, random_state=666, **params):
+    if type == 'ABT':
         return AdaBoostClassifier(random_state=random_state, **params)
 
-    elif name == 'DT':
+    elif type == 'DT':
         return DecisionTreeClassifier(random_state=random_state, **params)
 
-    elif name == 'GBT':
+    elif type == 'GBT':
         return GradientBoostingClassifier(random_state=random_state, **params)
 
-    elif name == 'KNN':
+    elif type == 'KNN':
         return KNeighborsClassifier()
 
-    elif name == 'LR':
+    elif type == 'LR':
         return LogisticRegression(random_state=random_state, **params)
 
-    elif name == 'GNB':
+    elif type == 'GNB':
         return naive_bayes.GaussianNB(**params)
 
-    elif name == 'RF':
+    elif type == 'RF':
         return RandomForestClassifier(random_state=random_state, **params)
 
-    elif name == 'SVM':
-        return svm.SVC(probability=True, random_state=random_state, **params)
+    elif type == 'SVM':
+        return svm.SVC(random_state=random_state, **params)
 
-    elif name == 'XGB':
+    elif type == 'XGB':
         return XGBClassifier(random_state=random_state, **params)
 
-    elif name == 'ET':
+    elif type == 'ET':
         return ExtraTreeClassifier(random_state=random_state, **params)
 
-    elif name == 'LGB':
+    elif type == 'LGB':
         return lgb.LGBMClassifier()
 
 
-def get_regressor_model(name, random_state=666, params=dict()):
-    if name == 'ABT':
-        return AdaBoostRegressor(random_state=random_state, **params)
+def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
+    y_train_pred = clf.predict(X_train)
+    y_test_pred = clf.predict(X_test)
+    y_train_proba = clf.predict_proba(X_train)[:, 1]
+    y_test_proba = clf.predict_proba(X_test)[:, 1]
 
-    elif name == 'DT':
-        return DecisionTreeRegressor(random_state=random_state, **params)
+    report = ''
+    # 训练集
+    report = '\n'.join([report, '训练集: '])
+    train_rpt = classification_report(y_train, y_train_pred)
+    train_auc = roc_auc_score(y_train, y_train_proba)
+    train_auc = 'auc score = {}'.format(train_auc)
+    report = '\n'.join([report, train_rpt, train_auc])
 
-    elif name == 'GBT':
-        return GradientBoostingRegressor(random_state=random_state, **params)
+    # 测试集
+    report = '\n'.join([report, '测试集: '])
+    test_rpt = classification_report(y_test, y_test_pred)
+    test_auc = roc_auc_score(y_test, y_test_proba)
+    test_auc = 'auc score = {}'.format(test_auc)
+    report = '\n'.join([report, test_rpt, test_auc])
 
-    elif name == 'KNN':
-        return KNeighborsRegressor()
+    # 准确率
+    report = '\n'.join([report, '[准确率]'])
+    train_score = '训练集：{:.4f}'.format(accuracy_score(y_train, y_train_pred))
+    test_score = '测试集：{:.4f}'.format(accuracy_score(y_test, y_test_pred))
+    report = '\n'.join([report, train_score, test_score])
 
-    elif name == 'LR':
-        return LogisticRegression(random_state=random_state, **params)
+    # 精准率
+    report = '\n'.join([report, '[精准率]'])
+    train_score = '训练集：{:.4f}'.format(precision_score(y_train, y_train_pred))
+    test_score = '测试集：{:.4f}'.format(precision_score(y_test, y_test_pred))
+    report = '\n'.join([report, train_score, test_score])
 
-    elif name == 'RF':
-        return RandomForestRegressor(random_state=random_state, **params)
+    # 召回率
+    report = '\n'.join([report, '[召回率]'])
+    train_score = '训练集：{:.4f}'.format(recall_score(y_train, y_train_pred))
+    test_score = '测试集：{:.4f}'.format(recall_score(y_test, y_test_pred))
+    report = '\n'.join([report, train_score, test_score])
+
+    # f1-score
+    report = '\n'.join([report, '[f1-score]'])
+    train_score = '训练集：{:.4f}'.format(f1_score(y_train, y_train_pred))
+    test_score = '测试集：{:.4f}'.format(f1_score(y_test, y_test_pred))
+    report = '\n'.join([report, train_score, test_score])
+
+    # auc取值：用roc_auc_score或auc
+    report = '\n'.join([report, '[auc值]'])
+    train_score = '训练集：{:.4f}'.format(roc_auc_score(y_train, y_train_proba))
+    test_score = '测试集：{:.4f}'.format(roc_auc_score(y_test, y_test_proba))
+    report = '\n'.join([report, train_score, test_score])
+
+    # roc曲线
+    fpr_train, tpr_train, thresholds_train = roc_curve(y_train, y_train_proba, pos_label=1)
+    fpr_test, tpr_test, thresholds_test = roc_curve(y_test, y_test_proba, pos_label=1)
+
+    label = ['Train - AUC:{:.4f}'.format(auc(fpr_train, tpr_train)),
+             'Test - AUC:{:.4f}'.format(auc(fpr_test, tpr_test))]
+    plt.plot(fpr_train, tpr_train)
+    plt.plot(fpr_test, tpr_test)
+    plt.plot([0, 1], [0, 1], 'd--')
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.legend(label, loc=4)
+    plt.title('{} ROC curve'.format(name))
+    plt.show()
+    return report
 
 
-    elif name == 'XGB':
-        return XGBRFRegressor(random_state=random_state, **params)
-
-    elif name == 'ET':
-        return ExtraTreeRegressor(random_state=random_state, **params)
-
-    elif name == 'LGB':
-        return lgb.LGBMRegressor()
+def mkdirs(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
 
 
-def train(x, y, name, type, save_name=None, random_state=None, params=dict()):
-    if type == 'Regressor':
-        model = get_regressor_model(name=name, random_state=random_state, params=params)
+def echo_log(info, log_file=None):
+    if log_file is None:
+        print(info)
     else:
-        model = get_classifier_model(name=name, random_state=random_state, params=params)
-    model.fit(x, y)  # 训练模型
-    if save_name:
-        joblib.dump(model, save_name, compress=5)
-    return model
+        print(info)
+        with open(log_file, 'a+') as fp:
+            fp.write(info)
 
 
-def evaluate(model, x, y_true, type='', output_dict=False):
-    y_pred = model.predict(x)
-    if type == 'Regressor':
-        rpt = mean_squared_error(y_true, y_pred)
-        return str(rpt)
-    else:
-        rpt = classification_report(y_true, y_pred, output_dict=output_dict)
-        return rpt
+class Config(object):
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
 
-def chunk2df(chunk_path, mode):
-    dataset_df = pd.DataFrame()
-    for m in mode:
-        mode_dir = os.path.join(chunk_path, m)
-        chunk_paths = glob.glob(os.path.join(mode_dir, r"{}_feature_chunk_*.h5".format(m)))
-        for idx, chunk_path in enumerate(chunk_paths):
-            hfs = pd.HDFStore(chunk_path)
-            feature_df = hfs['feature_df']
-            hfs.close()
-            dataset_df = pd.concat([dataset_df, feature_df])
-    columns = np.sort(dataset_df.columns)
-    dataset_df = dataset_df[list(columns)]
-    return dataset_df
+class Trainer(object):
+    def __init__(self, cfg, **kwargs):
+        if isinstance(cfg, str):
+            cfg = import_module(cfg)
+        self.cfg = Config(**cfg.Trainer)
+        mkdirs(self.cfg.model_dir)
+        self.models = {}
+        self.fine_models = {}
 
+    # 1: 平衡数据集
+    def balance(self, df):
+        if self.cfg.balance_data:
+            pos = df[df[self.cfg.train['target_key']] == 1]
+            neg = df.drop(pos.index)
+            rate = pos.shape[0] / neg.shape[0]
+            if rate < 1:
+                neg = neg.sample(len(pos))
+            elif rate > 1:
+                pos = pos.sample(len(neg))
+            df = pd.concat([pos, neg])
+            df = shuffle(df)
+            return df
 
-def get_train_stats(split_chunk_path, mode):
-    x = chunk2df(split_chunk_path, mode=mode)
-    train_stats = x.describe()
-    train_stats = train_stats.transpose()
-    return train_stats
+    # 2: 特征归一化
+    def normalize(self, df):
+        if self.cfg.normalize_type == 'StandardScaler':
+            std = StandardScaler()
+            return std.fit_transform(df)
+
+    # 3: 训练数据集
+    def train(self, x, y, type, name, params):
+        model = get_classifier(type=type, **params)
+        model.fit(x, y)  # 训练模型
+        d = dict(model=model, type=type, params=params)
+        self.models[name] = d
+        save_name = os.path.join(self.cfg.model_dir, name + '.m')
+        joblib.dump(d, save_name, compress=5)
+        return model
+
+    # 4: 模型调优
+    def finetune(self, x1, y1, x2, y2, type, name, params, param_grid, cv=4):
+        model = get_classifier(type=type, **params)
+        gsearch = GridSearchCV(model, param_grid=param_grid, scoring='roc_auc', cv=cv)
+        gsearch.fit(x1, y1)
+        echo_log('\n最佳参数: {}'.format(gsearch.best_params_), self.cfg.log_file)
+        echo_log('\n训练集的最佳分数：{}'.format(gsearch.best_score_), self.cfg.log_file)
+        echo_log('\n测试集的最佳分数: {}'.format(gsearch.score(x2, y2)), self.cfg.log_file)
+
+        fine_model = get_classifier(type=type, **gsearch.best_params_)
+        fine_model.fit(x1, y1)
+        d = dict(model=fine_model, type=type, params=gsearch.best_params_)
+        self.fine_models[name] = d
+        save_name = os.path.join(self.cfg.model_dir, name + '_finetune.m')
+        joblib.dump(d, save_name, compress=5)
+        return fine_model
+
+    # 5: 模型融合
+    def stack_models(self, x1, y1, x2, y2, meta):
+        classifiers = [v['model'] for k, v in self.fine_models.items()]
+        meta_classifier = self.fine_models[meta]['model']
+        sclf_lr = StackingClassifier(
+            classifiers=classifiers,
+            meta_classifier=meta_classifier,
+            use_probas=True,
+            average_probas=True,
+            use_features_in_secondary=True
+        )
+        sclf_lr.fit(x1, y1.values)
+        d = dict(model=sclf_lr, name='stacking_models', meta_classifier=meta)
+        save_name = os.path.join(self.cfg.model_dir, 'stacking_models.m')
+        joblib.dump(d, save_name, compress=5)
+        return sclf_lr
+
+    # 0: run
+    def run(self):
+        x1 = pd.read_csv(self.cfg.train['file'])
+        x2 = pd.read_csv(self.cfg.val['file'])
+        x1 = x1.fillna(0)
+        x2 = x2.fillna(0)
+        y1 = x1.pop(self.cfg.train['target_key'])
+        y2 = x2.pop(self.cfg.val['target_key'])
+        if self.cfg.balance_data:
+            x1 = self.balance(x1)
+        if self.cfg.normalize_type:
+            x1 = self.normalize(x1)
+            x2 = self.normalize(x2)
+        for v in self.cfg.models:
+            self.train(x1, y1, v['type'], v['name'], v['params'])
+            report = '\n'.join(
+                ['\n', v['name'], model_metrics(self.models[v['name']]['model'], x1, x2, y1, y2, v['name'])])
+            echo_log(report, self.cfg.log_file)
+            self.finetune(
+                x1, y1, x2, y2, v['type'], v['name'], v['params'], v['param_grid'])
+            report = '\n'.join(
+                ['\n', 'finetune_' + v['name'],
+                 model_metrics(self.fine_models[v['name']]['model'], x1, x2, y1, y2, 'fine_' + v['name'])])
+            echo_log(report, self.cfg.log_file)
+
+        stack_model = self.stack_models(x1, y1, x2, y2, self.cfg.stack_meta)
+        report = '\n'.join(['\n', 'stack_model', model_metrics(stack_model, x1, x2, y1, y2, 'stack_' + v['name'])])
+        echo_log(report, self.cfg.log_file)
 
 
 def main():
-    # 预先定义环境
-    dataset_cfg = import_module("cfg.py")
-    cfg = import_module(dataset_cfg.dataset_cfg_path)
-    save_dir = os.path.join(cfg.work_dirs, cfg.dataset_name, 'mode_' + '_'.join(cfg.train_mode))
-    mkdirs(save_dir)
-
-    train_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.train_mode)
-    # 先求normalization参数
-    normal_stats = None
-    if cfg.normalization == 'global':
-        normal_mode = cfg.train_mode
-        normal_mode.extend(cfg.val_mode)
-        normal_stats = get_train_stats(cfg.split_chunk_path, mode=normal_mode)
-    elif cfg.normalization == 'local':
-        normal_stats = None
-
-    # 是否平衡数据集
-    if cfg.balanced_data:
-        train_1 = train_dataset[train_dataset[cfg.target_name] == 1]
-        train_0 = train_dataset.drop(train_1.index)
-        rate = train_0.shape[0] / train_1.shape[0]
-        if rate > 1:
-            train_0 = train_0.sample(train_1.shape[0])
-        elif rate < 1:
-            train_1 = train_1.sample(train_0.shape[0])
-        train_dataset = pd.concat([train_0, train_1])
-        train_dataset = shuffle(train_dataset)
-
-    train_labels = train_dataset.pop(cfg.target_name)
-
-    # 标准化
-    if cfg.normalization == 'none':
-        normed_train_data = train_dataset
-        normed_train_data = normed_train_data.fillna(0)
-    else:
-        normed_train_data = norm_df(train_dataset, normal_stats)
-        normed_train_data = normed_train_data.fillna(0)
-
-    # log_df = []
-    for train_model in tqdm(cfg.train_models):
-        save_name = os.path.join(save_dir, "{}.m".format(train_model['name']))
-        model = train(normed_train_data, train_labels, train_model['name'], cfg.train_type, save_name,
-                      train_model['random_state'], train_model['params'])
-        print('\n\n{} {} {}'.format('=' * 36, train_model['name'], '=' * 36))
-        # rpt_row = [train_model['name']]
-
-        val_dataset = chunk2df(cfg.split_chunk_path, mode=cfg.val_mode)
-        val_labels = val_dataset.pop(cfg.target_name)
-        if cfg.normalization == 'none':
-            normed_val_data = val_dataset
-            normed_val_data = normed_val_data.fillna(0)
-        else:
-            normed_val_data = norm_df(val_dataset, normal_stats)
-            normed_val_data = normed_val_data.fillna(0)
-
-        rpt_str = evaluate(model, normed_val_data, val_labels, cfg.train_type, )
-        print(rpt_str)
-        with open(os.path.join(save_dir, 'train_log.txt'), 'a') as fp:
-            fp.write(train_model['name'] + ':\n' + rpt_str + '\n')
-        # rpt = evaluate(model, normed_val_data, val_labels, output_dict=True)
-        # rpt_row.extend([rpt['macro avg']['f1-score']])
-        # log_df.append(np.array(rpt_row))
-    # header = ['name','f1-score']
-    # log_df = pd.DataFrame(data=np.array(log_df), columns=header)
-    # log_df.to_csv(os.path.join(save_dir, 'train_log.csv'), header=True)
+    trainer = Trainer('cfg.py')
+    trainer.run()
     print('train successfully!')
 
 

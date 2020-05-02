@@ -8,6 +8,7 @@ code/*/ignores
 data/*/chunk
 data/*/features
 data/*/raw_data
+data/
 
 # Pytorch
 *.h5
