@@ -16,9 +16,9 @@ def split(df, rate=0.8, random_state=666, label_k='flag'):
 
 
 def main():
-    train_df, val_df = split('./data/train_feature.csv')
-    train_df.to_csv('./data/split_train_feature.csv', index=False)
-    val_df.to_csv('./data/split_val_feature.csv', index=False)
+    train_df, val_df = split('../work_dirs/zsbank/data/train_feature.csv')
+    train_df.to_csv('../work_dirs/zsbank/data/split_train_feature.csv', index=False)
+    val_df.to_csv('../work_dirs/zsbank/data/split_val_feature.csv', index=False)
     print('split train and val successfully!')
 
 

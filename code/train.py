@@ -19,6 +19,7 @@ from sklearn.model_selection import GridSearchCV, KFold, train_test_split
 from sklearn.metrics import make_scorer, accuracy_score
 import glob
 import os
+from pandas import json_normalize
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import classification_report
 from tqdm import tqdm
@@ -86,51 +87,44 @@ def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
     y_train_proba = clf.predict_proba(X_train)[:, 1]
     y_test_proba = clf.predict_proba(X_test)[:, 1]
 
-    report = ''
+    report = []
     # 训练集
-    report = '\n'.join([report, '训练集: '])
+    report.append('训练集: ')
     train_rpt = classification_report(y_train, y_train_pred)
     train_auc = roc_auc_score(y_train, y_train_proba)
     train_auc = 'auc score = {}'.format(train_auc)
-    report = '\n'.join([report, train_rpt, train_auc])
+    report.append(train_rpt)
+    report.append(train_auc)
 
     # 测试集
-    report = '\n'.join([report, '测试集: '])
+    report.append('测试集: ')
     test_rpt = classification_report(y_test, y_test_pred)
     test_auc = roc_auc_score(y_test, y_test_proba)
     test_auc = 'auc score = {}'.format(test_auc)
-    report = '\n'.join([report, test_rpt, test_auc])
+    report.append(test_rpt)
+    report.append(test_auc)
 
     # 准确率
-    report = '\n'.join([report, '[准确率]'])
-    train_score = '训练集：{:.4f}'.format(accuracy_score(y_train, y_train_pred))
-    test_score = '测试集：{:.4f}'.format(accuracy_score(y_test, y_test_pred))
-    report = '\n'.join([report, train_score, test_score])
-
-    # 精准率
-    report = '\n'.join([report, '[精准率]'])
-    train_score = '训练集：{:.4f}'.format(precision_score(y_train, y_train_pred))
-    test_score = '测试集：{:.4f}'.format(precision_score(y_test, y_test_pred))
-    report = '\n'.join([report, train_score, test_score])
-
-    # 召回率
-    report = '\n'.join([report, '[召回率]'])
-    train_score = '训练集：{:.4f}'.format(recall_score(y_train, y_train_pred))
-    test_score = '测试集：{:.4f}'.format(recall_score(y_test, y_test_pred))
-    report = '\n'.join([report, train_score, test_score])
-
-    # f1-score
-    report = '\n'.join([report, '[f1-score]'])
-    train_score = '训练集：{:.4f}'.format(f1_score(y_train, y_train_pred))
-    test_score = '测试集：{:.4f}'.format(f1_score(y_test, y_test_pred))
-    report = '\n'.join([report, train_score, test_score])
-
-    # auc取值：用roc_auc_score或auc
-    report = '\n'.join([report, '[auc值]'])
-    train_score = '训练集：{:.4f}'.format(roc_auc_score(y_train, y_train_proba))
-    test_score = '测试集：{:.4f}'.format(roc_auc_score(y_test, y_test_proba))
-    report = '\n'.join([report, train_score, test_score])
-
+    rpt_df = [
+        dict(
+            name='train',
+            accuracy=accuracy_score(y_train, y_train_pred),
+            precision=precision_score(y_train, y_train_pred),
+            recall=recall_score(y_train, y_train_pred),
+            f1_score=f1_score(y_train, y_train_pred),
+            auc_score=roc_auc_score(y_train, y_train_proba)
+        ),
+        dict(
+            name='test',
+            accuracy=accuracy_score(y_test, y_test_pred),
+            precision=precision_score(y_test, y_test_pred),
+            recall=recall_score(y_test, y_test_pred),
+            f1_score=f1_score(y_test, y_test_pred),
+            auc_score=roc_auc_score(y_test, y_test_proba)
+        ),
+    ]
+    rpt_df = json_normalize(rpt_df)
+    report.append(str(rpt_df))
     # roc曲线
     fpr_train, tpr_train, thresholds_train = roc_curve(y_train, y_train_proba, pos_label=1)
     fpr_test, tpr_test, thresholds_test = roc_curve(y_test, y_test_proba, pos_label=1)
@@ -145,7 +139,7 @@ def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
     plt.legend(label, loc=4)
     plt.title('{} ROC curve'.format(name))
     plt.show()
-    return report
+    return '\n'.join(report)
 
 
 def mkdirs(path):
@@ -272,7 +266,7 @@ class Trainer(object):
 
 
 def main():
-    trainer = Trainer('cfg.py')
+    trainer = Trainer('configs/zsbank.py')
     trainer.run()
     print('train successfully!')
 

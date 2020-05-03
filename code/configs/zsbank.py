@@ -1,9 +1,10 @@
 # config
+root_dir = '../work_dirs/zsbank/'
 Trainer = dict(
-    model_dir='./work_dirs/models/',
-    train=dict(file='./data/split_train_feature.csv', target_key='flag'),
-    val=dict(file='./data/split_val_feature.csv', target_key='flag'),
-    log_file='./work_dirs/models/train_log.txt',
+    model_dir=root_dir + 'models/',
+    train=dict(file=root_dir + 'data/split_train_feature.csv', target_key='flag'),
+    val=dict(file=root_dir + 'data/split_val_feature.csv', target_key='flag'),
+    log_file=root_dir + 'models/train_log.txt',
     normalize_type='StandardScaler',
     balance_data=False,
     stack_meta='LGB',
@@ -59,15 +60,20 @@ Trainer = dict(
 )
 
 Inference = dict(
-    model_dir='./work_dirs/models/',
-    submit_dir='./work_dirs/submit/',
-    test=dict(file='./data/test_feature.csv', target_key='flag', uid_key='id'),
+    model_dir=root_dir + 'models/',
+    submit_dir=root_dir + 'submit/',
+    test=dict(file=root_dir + 'data/test_feature.csv', target_key='flag', uid_key='id'),
     normalize_type='StandardScaler',
     models=[
         dict(name='LGB_finetune', type='LGB'),
         dict(name='RF_finetune', type='RF'),
         dict(name='XGB_finetune', type='XGB'),
         dict(name='stacking_models', type='stack_model'),
+
+        dict(name='LGB', type='LGB'),
+        dict(name='RF', type='RF'),
+        dict(name='XGB', type='XGB'),
+
         # dict(name='DT', type='DT'),
         # dict(name='LR', type='LR'),
         # dict(name='ET', type='ET'),

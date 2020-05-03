@@ -9,8 +9,10 @@ data/*/chunk
 data/*/features
 data/*/raw_data
 data/
+work_dirs/
 
 # Pytorch
+*.m
 *.h5
 *.pth
 *.pkl
