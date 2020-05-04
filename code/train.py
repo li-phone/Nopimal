@@ -87,27 +87,28 @@ def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
     y_train_proba = clf.predict_proba(X_train)[:, 1]
     y_test_proba = clf.predict_proba(X_test)[:, 1]
 
-    report = []
-    # 训练集
-    report.append('训练集: ')
-    train_rpt = classification_report(y_train, y_train_pred)
-    train_auc = roc_auc_score(y_train, y_train_proba)
-    train_auc = 'auc score = {}'.format(train_auc)
-    report.append(train_rpt)
-    report.append(train_auc)
-
-    # 测试集
-    report.append('测试集: ')
-    test_rpt = classification_report(y_test, y_test_pred)
-    test_auc = roc_auc_score(y_test, y_test_proba)
-    test_auc = 'auc score = {}'.format(test_auc)
-    report.append(test_rpt)
-    report.append(test_auc)
+    # report = []
+    # # 训练集
+    # report.append('训练集: ')
+    # train_rpt = classification_report(y_train, y_train_pred)
+    # train_auc = roc_auc_score(y_train, y_train_proba)
+    # train_auc = 'auc score = {}'.format(train_auc)
+    # report.append(train_rpt)
+    # report.append(train_auc)
+    #
+    # # 测试集
+    # report.append('测试集: ')
+    # test_rpt = classification_report(y_test, y_test_pred)
+    # test_auc = roc_auc_score(y_test, y_test_proba)
+    # test_auc = 'auc score = {}'.format(test_auc)
+    # report.append(test_rpt)
+    # report.append(test_auc)
 
     # 准确率
     rpt_df = [
         dict(
-            name='train',
+            name=name,
+            mode='train',
             accuracy=accuracy_score(y_train, y_train_pred),
             precision=precision_score(y_train, y_train_pred),
             recall=recall_score(y_train, y_train_pred),
@@ -115,7 +116,8 @@ def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
             auc_score=roc_auc_score(y_train, y_train_proba)
         ),
         dict(
-            name='test',
+            name=name,
+            mode='test',
             accuracy=accuracy_score(y_test, y_test_pred),
             precision=precision_score(y_test, y_test_pred),
             recall=recall_score(y_test, y_test_pred),
@@ -123,8 +125,8 @@ def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
             auc_score=roc_auc_score(y_test, y_test_proba)
         ),
     ]
-    rpt_df = json_normalize(rpt_df)
-    report.append(str(rpt_df))
+    # rpt_df = json_normalize(rpt_df)
+    # report.append(str(rpt_df))
     # roc曲线
     fpr_train, tpr_train, thresholds_train = roc_curve(y_train, y_train_proba, pos_label=1)
     fpr_test, tpr_test, thresholds_test = roc_curve(y_test, y_test_proba, pos_label=1)
@@ -139,7 +141,7 @@ def model_metrics(clf, X_train, X_test, y_train, y_test, name=None):
     plt.legend(label, loc=4)
     plt.title('{} ROC curve'.format(name))
     plt.show()
-    return '\n'.join(report)
+    return rpt_df
 
 
 def mkdirs(path):
@@ -248,21 +250,20 @@ class Trainer(object):
         if self.cfg.normalize_type:
             x1 = self.normalize(x1)
             x2 = self.normalize(x2)
+        train_results = []
         for v in self.cfg.models:
             self.train(x1, y1, v['type'], v['name'], v['params'])
-            report = '\n'.join(
-                ['\n', v['name'], model_metrics(self.models[v['name']]['model'], x1, x2, y1, y2, v['name'])])
-            echo_log(report, self.cfg.log_file)
+            train_results.extend(model_metrics(self.models[v['name']]['model'], x1, x2, y1, y2, v['name']))
             self.finetune(
                 x1, y1, x2, y2, v['type'], v['name'], v['params'], v['param_grid'])
-            report = '\n'.join(
-                ['\n', 'finetune_' + v['name'],
-                 model_metrics(self.fine_models[v['name']]['model'], x1, x2, y1, y2, 'fine_' + v['name'])])
-            echo_log(report, self.cfg.log_file)
+            train_results.extend(
+                model_metrics(self.fine_models[v['name']]['model'], x1, x2, y1, y2, 'fine_' + v['name']))
 
         stack_model = self.stack_models(x1, y1, x2, y2, self.cfg.stack_meta)
-        report = '\n'.join(['\n', 'stack_model', model_metrics(stack_model, x1, x2, y1, y2, 'stack_' + v['name'])])
-        echo_log(report, self.cfg.log_file)
+        train_results.extend(model_metrics(stack_model, x1, x2, y1, y2, 'stack_' + v['name']))
+        train_results = json_normalize(train_results)
+        train_results.sort_values(by=['mode', 'auc_score'], ascending=False)
+        echo_log(str(train_results), self.cfg.log_file)
 
 
 def main():

@@ -53,7 +53,7 @@ class Inference(object):
 
 
 def main():
-    infer = Inference('cfg.py')
+    infer = Inference('configs/zsbank.py')
     infer.run()
     print('train successfully!')
 

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from pandas.api.types import is_string_dtype, is_numeric_dtype, is_float_dtype, is_int64_dtype
 import matplotlib as mpl
 from pandas import json_normalize
+from tqdm import tqdm
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -42,14 +43,15 @@ def analysis_new_ids(train_df, test_df, id_k='id', label_k='flag'):
         test_df = pd.read_csv(test_df)
 
     # 统计正负样本比例
-    p_cnt = len(train_df[train_df[label_k] == 1])
-    n_cnt = len(train_df[train_df[label_k] == 0])
-    print('train set: Pos / Neg = {}'.format(p_cnt / n_cnt))
+    if label_k in list(train_df.columns):
+        p_cnt = len(train_df[train_df[label_k] == 1])
+        n_cnt = len(train_df[train_df[label_k] == 0])
+        print('train set: Pos / Neg = {}'.format(p_cnt / n_cnt))
 
     # 统计测试集新用户和老用户
-    test_ids = np.unique(test_df[id_k])
-    train_ids = np.unique(train_df[id_k])
-    old_ids = set(train_ids) and set(test_ids)
+    test_ids = list(np.unique(test_df[id_k]))
+    train_ids = list(np.unique(train_df[id_k]))
+    old_ids = set(train_ids) & set(test_ids)
     new_ids = set(test_ids) - old_ids
     print('new_ids = {}, old_ids = {}'.format(len(new_ids), len(old_ids)))
 
@@ -93,7 +95,7 @@ def drop_null_feature(data):
         ax1.set_ylabel('缺失占比')
         plt.show()
         for k, v in miss_kv.items():
-            if v > 0.1:
+            if v > 0.5:
                 data.pop(k)
     return data
 
@@ -163,7 +165,7 @@ def iv_feature(df, target_key='flag', bin_num=10, min_num=20):
     return iv_keys
 
 
-def make_feature(df):
+def make_feature(df, train=True):
     # 2: 删除无关特征
     df = drop_ind_feature(df)
     # 了解数据整体情况
@@ -178,13 +180,23 @@ def make_feature(df):
 
 
 if __name__ == '__main__':
-    # 0: 读取数据
-    DATA_DIR = '../work_dirs/zsbank/data/'
+    DATA_DIR = '../../work_dirs/zsbank/data/'
+
     train_tag = pd.read_csv(DATA_DIR + 'train_tag.csv')
-    train_tag.drop_duplicates(inplace=True)
+    train_trd_features = pd.read_csv(DATA_DIR + 'feature/train_trd_feature.csv')
     test_tag = pd.read_csv(DATA_DIR + 'test_tag.csv')
+    test_trd_features = pd.read_csv(DATA_DIR + 'feature/test_trd_feature.csv')
+
     # 1: 查看新老用户
     analysis_new_ids(train_tag, test_tag)
+    analysis_new_ids(train_tag, train_trd_features)
+
+    # 合并特征
+    train_tag = pd.merge(train_tag, train_trd_features, on='id', how='left')
+    test_tag = pd.merge(test_tag, test_trd_features, on='id', how='left')
+
+    # 0: 读取数据
+    train_tag.drop_duplicates(inplace=True)
 
     # 生成训练集特征
     train_tag.pop('id')
@@ -193,17 +205,17 @@ if __name__ == '__main__':
     train_feature['flag'] = train_labels
 
     # 1: 提取IV值特征
-    iv_keys = iv_feature(train_feature)
-    train_feature = train_feature[iv_keys]
+    # iv_keys = iv_feature(train_feature)
+    # train_feature = train_feature[iv_keys]
     train_feature['flag'] = train_labels
 
-    train_feature.to_csv(DATA_DIR + 'train_feature.csv', index=False)
+    train_feature.to_csv(DATA_DIR + 'feature/train_feature.csv', index=False)
     # 生成测试集特征
     test_ids = test_tag.pop('id')
     test_feature = make_feature(test_tag)
-    test_tag = test_tag[iv_keys]
+    # test_feature = test_feature[iv_keys]
     test_feature['id'] = test_ids
-    test_feature.to_csv(DATA_DIR + 'test_feature.csv', index=False)
+    test_feature.to_csv(DATA_DIR + 'feature/test_feature.csv', index=False)
 
     # type_k_v = {
     #     'job_year': 'int',
