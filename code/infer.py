@@ -55,7 +55,6 @@ class Inference(object):
 def main():
     infer = Inference('configs/zsbank.py')
     infer.run()
-    print('train successfully!')
 
 
 if __name__ == "__main__":

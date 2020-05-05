@@ -260,9 +260,9 @@ class Trainer(object):
                 model_metrics(self.fine_models[v['name']]['model'], x1, x2, y1, y2, 'fine_' + v['name']))
 
         stack_model = self.stack_models(x1, y1, x2, y2, self.cfg.stack_meta)
-        train_results.extend(model_metrics(stack_model, x1, x2, y1, y2, 'stack_' + v['name']))
+        train_results.extend(model_metrics(stack_model, x1, x2, y1, y2, 'stack_' + self.cfg.stack_meta))
         train_results = json_normalize(train_results)
-        train_results.sort_values(by=['mode', 'auc_score'], ascending=False)
+        train_results.sort_values(by=['mode', 'auc_score'], ascending=False, inplace=True)
         echo_log(str(train_results), self.cfg.log_file)
 
 

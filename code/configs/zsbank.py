@@ -2,8 +2,8 @@
 root_dir = '../work_dirs/zsbank/'
 Trainer = dict(
     model_dir=root_dir + 'models/',
-    train=dict(file=root_dir + 'data/feature/split_train_feature.csv', target_key='flag'),
-    val=dict(file=root_dir + 'data/feature/split_val_feature.csv', target_key='flag'),
+    train=dict(file=root_dir + 'data/feature/train_feature.csv', target_key='flag'),
+    val=dict(file=root_dir + 'data/feature/train_feature.csv', target_key='flag'),
     log_file=root_dir + 'models/train_log.txt',
     normalize_type='StandardScaler',
     balance_data=False,
@@ -12,37 +12,39 @@ Trainer = dict(
         dict(name='RF', type='RF', random_state=666, params=dict(),
              param_grid={
                  'n_estimators': [800],
-                 'max_depth': [9],
+                 'max_depth': list(range(3, 10)),
                  # 'criterion': ['entropy'],
                  # 'min_samples_split': [7]
              }),
         dict(name='XGB', type='XGB', random_state=666, params=dict(),
              param_grid={
                  'n_estimators': [40],
-                 'max_depth': [6]
+                 'max_depth': list(range(3, 10)),
+                 # 'max_depth': [6]
              }),
         dict(name='LGB', type='LGB', random_state=666, params=dict(),
              param_grid={
                  'n_estimators': [60],
              }),
-        # dict(name='DT', type='DT', random_state=666, params=dict(),
-        #      param_grid=dict(
-        #          max_depth=[8],
-        #          min_samples_split=[450]
-        #      )),
-        # dict(name='LR', type='LR', random_state=666, params=dict(),
-        #      param_grid=dict(
-        #          penalty=['l2'],
-        #          C=[0.01]
-        #      )),
+        dict(name='DT', type='DT', random_state=666, params=dict(),
+             param_grid={
+                 # max_depth=[8],
+                 'max_depth': list(range(3, 10)),
+                 'min_samples_split': [450]
+             }),
+        dict(name='LR', type='LR', random_state=666, params=dict(),
+             param_grid=dict(
+                 penalty=['l2'],
+                 C=[0.01]
+             )),
+        dict(name='GBT', type='GBT', random_state=666, params=dict(),
+             param_grid={
+                 'max_depth': list(range(3, 10)),
+                 # 'n_estimators': list(range(100, 800, 100)),
+             }),
         # dict(name='ET', type='ET', random_state=666, params=dict(),
         #      param_grid={
         #          'max_depth': list(range(6, 10))
-        #      }),
-        # dict(name='GBT', type='GBT', random_state=666, params=dict(),
-        #      param_grid={
-        #          # 'max_depth': list(range(3, 10)),
-        #          # 'n_estimators': list(range(100, 800, 100)),
         #      }),
         # dict(name='GNB', type='GNB', random_state=666, params=dict(),
         #      param_grid={}),

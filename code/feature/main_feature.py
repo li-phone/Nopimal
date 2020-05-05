@@ -171,7 +171,7 @@ def make_feature(df, train=True):
     # 了解数据整体情况
     print(df.info())
     # 3: 删除缺失特征
-    df = drop_null_feature(df)
+    # df = drop_null_feature(df)
     # 4: 填充缺失特征
     df = fill_null_feature(df)
     # 5: 映射字符串特征
@@ -192,8 +192,8 @@ if __name__ == '__main__':
     analysis_new_ids(train_tag, train_trd_features)
 
     # 合并特征
-    train_tag = pd.merge(train_tag, train_trd_features, on='id', how='left')
-    test_tag = pd.merge(test_tag, test_trd_features, on='id', how='left')
+    # train_tag = pd.merge(train_tag, train_trd_features, on='id', how='left')
+    # test_tag = pd.merge(test_tag, test_trd_features, on='id', how='left')
 
     # 0: 读取数据
     train_tag.drop_duplicates(inplace=True)
